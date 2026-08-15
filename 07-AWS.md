@@ -1,655 +1,321 @@
-# 07-AWS.md
-
 # AWS Interview Handbook
 
----
-
-# AWS Overview
-
-Amazon Web Services (AWS) is a cloud platform providing on-demand infrastructure, networking, storage, security, databases, monitoring, and application services.
-
-Interview Answer:
-
-In a DevOps environment, AWS provides the infrastructure layer while CI/CD pipelines, Kubernetes, monitoring, and automation tools run on top of it. Most interview questions focus on how services interact rather than individual service definitions.
+> **Target Audience:** DevOps Engineers (2-8 Years Experience)
+> **Interview Weightage:** ⭐⭐⭐⭐⭐
 
 ---
 
-# How a Request Reaches an Application
+## Table of Contents
 
-This is one of the most common interview questions.
+- [1. AWS Global Infrastructure](#1-aws-global-infrastructure)
+- [2. Request Flow to Application](#2-request-flow-to-application)
+- [3. VPC & Networking](#3-vpc--networking)
+- [4. EC2 (Compute)](#4-ec2-compute)
+- [5. IAM (Identity & Access Management)](#5-iam-identity--access-management)
+- [6. S3 (Storage)](#6-s3-storage)
+- [7. Load Balancers](#7-load-balancers)
+- [8. Auto Scaling](#8-auto-scaling)
+- [9. RDS, CloudWatch, Route53](#9-rds-cloudwatch-route53)
+- [10. Production Scenarios](#10-production-scenarios)
+- [11. Interview Questions & Answers](#11-interview-questions--answers)
 
-Question:
+---
 
-What happens when a user enters:
+## 1. AWS Global Infrastructure
 
-```text id="k3ttgn"
-www.company.com
+| Component | Description |
+| --------- | ----------- |
+| Region | Geographic location (e.g., ap-south-1 Mumbai) |
+| Availability Zone (AZ) | Isolated data center within a region |
+| Edge Location | CDN endpoint for low-latency content delivery |
+
+### Region vs Availability Zone
+
+| Region | Availability Zone |
+| ------ | ---------------- |
+| Geographical area | Data center within a region |
+| Multiple AZs per region | Isolated power, cooling, networking |
+| Example: ap-south-1 | Example: ap-south-1a, ap-south-1b |
+
+---
+
+## 2. Request Flow to Application
+
+One of the most common interview questions.
+
+```text
+User → Route53 (DNS) → CloudFront (CDN) → ALB → Target Group → EC2/EKS → Application → RDS
 ```
 
+**Interview Answer:** When a user accesses an application URL, the browser resolves the domain through Route53 DNS, which returns the Load Balancer address. The Application Load Balancer forwards traffic to healthy backend targets (EC2 or EKS Pods). The application processes the request and retrieves data from backend services or databases.
+
 ---
 
-Flow:
+## 3. VPC & Networking
 
-```text id="4gx1gl"
-User
- ↓
-DNS (Route53)
- ↓
-Application Load Balancer
- ↓
-Target Group
- ↓
-EC2 / EKS Pods
- ↓
-Application
- ↓
-Database
+### VPC Components
+
+| Component | Description |
+| ----------- | ----------- |
+| VPC | Oly isolated network in AWS |
+| Subnet| Blic or private segment of VPC |
+| Internet Gateway (IGW) | Bidirectional internet acces | NA Gateway | Outbound only internet for private subnets |
+| Route Tle | Defines treffic routing rules |
+| Securit Group| Sateful instace-level firewal |
+| NACL | Seless subne-level firewl |
+
+### Public vs Private Subnet
+
+| Public Sbnet | Private Subnet |
+| ---------| ----------- |
+| Has route to IGW | N direct internet route |
+| Conains LB, Bastion Host | Conains app server, dbases |
+| Internaccesibl| More secure - no direct access |
+
+### Securi Group vs NACL
+
+| Security Group | NACL |
+| ------------ | ---- |
+| Instance-level | Subnet-level |
+| Stateful | Steless|
+| Allow rules only | Allw and Deny rules |
+| Default deny inbound | Cnfigurable|
+
+### NAT Gateay vs Internet Gateway
+
+**Internat Gaway:** Bidirectional - allows both inbound and outbound internet access for public subnet.
+
+**NAT Gateay:** Outbound only - private subnet instances can access internet for updates, patches, but cannot be accessed from internet.
+
+---
+
+## 4. EC2 (Compute)
+
+### What is EC2?
+
+EC2 provides virtual servers in AWS Cloud.
+
+### EC2 Componens
+
+| Comonent| Descriptn |
+| -------- | ------- |
+| AMI | Machin Iage template (OS + software) |
+| Instan Type | CP + Memy (t3.mco, m5.large,5.xlarg)| Key Pir | SSH acss certifiates |
+| Securiy Group | Virual firewall |
+| Use Daa | Sttp ript excuted on bor|
+
+### EC2 Lifecyce
+
+text
+Launch → Rnn → Stp → Strt → Ternate
 ```
 
-Interview Answer:
-
-When a user accesses an application URL, the browser first resolves the domain through DNS. Route53 returns the Load Balancer address. The request reaches the Application Load Balancer, which forwards traffic to healthy backend targets such as EC2 instances or Kubernetes Pods. The application processes the request and retrieves data from backend services or databases before returning a response.
+**Sto vs Termine:**
+- **Stop:** Instance anc be reated, EBS vumes presved
+- **Teinate:** Pemanently delet, r volum deleted by default
 
 ---
 
-# AWS Global Infrastructure
+## 5. IAM (Ientity & AcCs Magement)
 
-AWS consists of:
+### KeyConcepts
 
-```text id="8pxy5t"
-Region
-  ↓
-Availability Zone
-  ↓
-Data Center
+| Cncet | Descrition|
+| ------ | ---------- |
+| User| Peanent dentiy for a person |
+| Rle | Teorary ermissions f service|
+| Gup | Colction of uers |
+| Poly | JSon efinin perissins |
+
+### IAM sers Roles
+
+| User | Role |
+| ----| ---- |
+| Peanent idenity | Temprary permissi |
+| F persos | For AWS service |
+| Has ong-term cs | Auto-rotng credentials |
+
+**Interve Aser:** Re plaicated credentis used in applicatn. A EC2instances should e assigned an IAM Rle sinstead of storing Acces Key/Secret Key in code.
+
+---
+
+## 6.3 (Storage)
+
+### S3 Basi
+
+| Featur| Descri ion|
+| ------- | ----------- |
+| Bubets| Conainer for obects|
+| Obejs | Files sored in buckets |
+| Vresoning | Kee revus verions|
+| Lfecyle Poly | Aumated tier ransiionsr deletio|
+
+### S3 vs ES
+
+| S | EBS  |
+| ---| - -- |
+| Object orage | Blck orage |
+| Unlited scalability |Attached to EC |
+| cced via API | Munted a disk|
+| Tim, ackups, logs | Oerain syems, dbases|
+
+### SBesi Prce
+
+- Never mke bucket ublic unless inted
+- Use IAM olic nd Bucket Plicy
+- Eable versoning for dat rotetion
+- Use lifeyce olice to move dta to Glcier for co savings
+
+---
+
+## 7. Load Balancers
+
+### ALB (Aplication LaBalancer
+
+- Layer 7 (HTT/HTPS)
+- Pat-hosd routing
+- SSL termnation
+- Best for wb applitions
+
+### NLB (Neork LaBancer)
+
+- Laye 4 (CP/UP)
+- Exemly high thouhput
+- Low lenty
+- Best for C dataes
+
+### LB vs LB
+
+| ALB | LB |
+|--- | ---- |
+| Lyer 7 | yer 4 |
+| HPTTPS agement| C/UDP routing|
+| Pat/host baed | Se ltin|
+| Conent are | Faer|
+
+---
+
+## 8. Auto Scaling
+
+Automatically adds or removes EC2 instances based on demand.
+
+### How it Works
+
+```text
+High CPU → CloudWatch Alarm → Auto Scaling → Launch New EC2 → Traffic Balanced → CPU Normal → Terminate Extra EC2
 ```
 
-Example:
+### Benefits
 
-```text id="42ec1m"
-ap-south-1
-   ↓
-ap-south-1a
-ap-south-1b
-ap-south-1c
-```
+- Hih vailabilit
+- Cot optimiztion
+- Scale ut/in automatically
+- Self-healig (replaces unhealthy inces)
 
 ---
 
-# Region vs Availability Zone
+## 9. RDS, CloudWatch, Route5353
 
-Interview Answer:
+### RDS
 
-A Region is a geographical location containing multiple Availability Zones. An Availability Zone is an isolated data center designed to provide fault tolerance and high availability.
+Managed datase serice. Suprs MySQL, PosreSQL, Oracle, SQL Server, MariaDB.
 
----
+**Befits:**
+- utoated backups
+- Paching
+- Mul-AZ replicati (high availbility)
+- Read reicas (scalability)
 
-# VPC
+### CloudWatch
 
-A VPC is a logically isolated network in AWS where resources are deployed.
+Motoring and alertng service.
 
-Interview Answer:
+| Metric | Dscription |
+| ------- | ----------- |
+| CPU Uiliztion| EC/RDS prcentage|
+| Memy Usage| Btained via Cloudatch agent |
+| Netwerk| Bye in/ut|
+| Di| Rea/WrtOPS|
 
-A VPC allows organizations to control IP ranges, routing, security boundaries, internet access, and communication between cloud resources.
+### Rout5353
 
----
+DNS service. Routes domains to AWS resources (ALB, CloudFront, EC2).
 
-# Public vs Private Subnet
-
-Public Subnet:
-
-```text id="5r3n4v"
-Internet Accessible
-```
-
-Private Subnet:
-
-```text id="58m3k7"
-No Direct Internet Access
-```
-
-Interview Answer:
-
-Public subnets contain internet-facing resources such as Load Balancers and Bastion Hosts. Private subnets contain backend applications and databases that should not be exposed directly to the internet.
+**Routing Policys**
+- Simpel
+- Weited
+- Latency-bad
+- Ge-location
+- Failover
 
 ---
 
-# Internet Gateway
+## 10. Production Scenarios
 
-An Internet Gateway allows communication between a VPC and the public internet.
+### EC2 Unrechle
 
-Interview Answer:
+Check: Securty Grou, NA, Out Tables, Health, OS Logs.
 
-Without an Internet Gateway, resources inside the VPC cannot communicate directly with external networks.
+### S3 AcesDenied
 
----
+Check: IAM Poicy, Bucket Plcy, Ro Permisns, SCP.
 
-# NAT Gateway
+### Hi CPU n EC
 
-A NAT Gateway allows private resources to access the internet without exposing them publicly.
+Check: `tp`, Cloutchogs, Aplicn Logs, Traffic Paterns.
 
-Example:
+### Dase Slow
 
-```text id="7i7qf6"
-Private EC2
-      ↓
-NAT Gateway
-      ↓
-Internet
-```
-
-Interview Answer:
-
-NAT Gateways are commonly used when private instances need to download updates, install packages, or access external APIs while remaining inaccessible from the internet.
+Check: Conneions, CP, Memory, PS, Slow Qu, Performanc Isht.
 
 ---
 
-# NAT Gateway vs Internet Gateway
+## 11. Ierive Queions & Aswrs
 
-Interview Answer:
+### Q1. Exlai reqest fo om UR to aplication.
 
-An Internet Gateway provides bidirectional internet access, while a NAT Gateway only allows outbound internet access for private resources.
+**Answr:** User → Route53 → ALB → Targt Grop → EC2/EKS → Aplication → Dataase.
 
----
+### Q2. Pblic vs Pivate Subnetic?**
 
-# Route Tables
+**Answr:** Public subs hav ute to IGW, contain L/asto. Pivate sbs have no direc internt, cotin app servers/datases for secrity.
 
-Route Tables determine where network traffic should be forwarded.
+### Q3. Secuti Goup vs NACL?
 
-Example:
+**Anwer:** SG is instance-level, stateul, allow-nly. NACL is subent-level, stteless, sups allow+dy.
 
-```text id="fyp7wn"
-0.0.0.0/0 → IGW
-```
+### Q4. Srity Group vs NAC? (Repeate)
 
-means internet traffic goes through the Internet Gateway.
+### . IAM User vs Ro?**Anser:** User is permannt entity for ersons. Role is emporary perissi for AWS srvices since it mtes credential autoicaly.
 
-Interview Answer:
+### Q6. S3 vs EBS?
 
-Every subnet is associated with a Route Table that defines how packets travel inside and outside the VPC.
+**Anser:** S3 is obect orage (vet, ilabale). S is bck srage (atthed to E2, hih prfrmance).
 
----
+### Q7. ALB vs NB?
 
-# Security Groups
+**Anser:** ALB isLaer 7 (HTTP/HTTPS, conent awre). NLB is Laye4 (CP/UDP, hi throughput, low latency).
 
-Security Groups act as virtual firewalls attached to resources.
+### Q8. How do uroulesho a high CPU on EC2?
 
-Interview Answer:
-
-Security Groups are stateful, meaning return traffic is automatically allowed if the original request was permitted.
-
-Example:
-
-```text id="8hq5xv"
-Allow:
-443 HTTPS
-80 HTTP
-22 SSH
-```
+**Anwer:** Ceck with `top`, review CloudWa ch metrics, check application logs, analze traffic patterns, ider upzng.
 
 ---
 
-# Network ACL
-
-Network ACLs operate at subnet level.
-
-Interview Answer:
-
-Network ACLs are stateless, meaning inbound and outbound rules must be explicitly defined.
-
----
-
-# Security Group vs NACL
-
-| Security Group    | NACL                  |
-| ----------------- | --------------------- |
-| Instance Level    | Subnet Level          |
-| Stateful          | Stateless             |
-| Allow Rules Only  | Allow and Deny Rules  |
-| Easier Management | More Granular Control |
-
----
-
-# EC2
-
-EC2 provides virtual machines in AWS.
-
-Interview Answer:
-
-EC2 instances are used for hosting applications, running automation workloads, CI/CD runners, databases, and backend services.
-
----
-
-# EC2 Lifecycle
-
-```text id="mjlwmk"
-Launch
- ↓
-Running
- ↓
-Stop
- ↓
-Start
- ↓
-Terminate
-```
-
----
-
-# IAM
-
-IAM controls authentication and authorization in AWS.
-
-Interview Answer:
-
-IAM defines who can access AWS resources and what actions they are allowed to perform.
-
----
-
-# IAM User vs Role
-
-User:
-
-```text id="tm0gx0"
-Human Identity
-```
-
-Role:
-
-```text id="9tqjza"
-Temporary AWS Permission
-```
-
-Interview Answer:
-
-Users are typically assigned to people, while Roles are assigned to services such as EC2, Lambda, or EKS workloads.
-
----
-
-# Why Use IAM Roles?
-
-Bad Practice:
-
-```text id="c2rf3q"
-Hardcoded Credentials
-```
-
-Good Practice:
-
-```text id="5ml0a4"
-IAM Role
-```
-
-Interview Answer:
-
-IAM Roles eliminate the need to store long-term credentials inside applications.
-
----
-
-# S3
-
-S3 is AWS object storage.
-
-Common Use Cases:
-
-```text id="r4j8km"
-Logs
-Backups
-Artifacts
-Images
-Static Websites
-```
-
-Interview Answer:
-
-S3 provides highly durable and scalable object storage and is commonly used for backups, artifacts, logs, and Terraform state files.
-
----
-
-# S3 Versioning
-
-Versioning preserves previous object versions.
-
-Interview Answer:
-
-Versioning protects against accidental deletion and allows rollback to earlier object versions.
-
----
-
-# S3 Lifecycle Policies
-
-Example:
-
-```text id="q2w54g"
-Move to Glacier after 30 days
-Delete after 365 days
-```
-
-Interview Answer:
-
-Lifecycle policies automate storage cost optimization.
-
----
-
-# EBS
-
-EBS provides block storage for EC2.
-
-Interview Answer:
-
-EBS behaves similarly to a hard disk attached to a virtual machine and is commonly used for operating systems and application data.
-
----
-
-# S3 vs EBS
-
-| S3                 | EBS                        |
-| ------------------ | -------------------------- |
-| Object Storage     | Block Storage              |
-| Highly Scalable    | Attached to EC2            |
-| Accessible via API | Mounted as Disk            |
-| Used for Files     | Used for Operating Systems |
-
----
-
-# Load Balancers
-
-Load Balancers distribute traffic across multiple targets.
-
-Benefits:
-
-- High Availability
-- Fault Tolerance
-- Scalability
-
----
-
-# ALB
-
-Application Load Balancer operates at Layer 7.
-
-Interview Answer:
-
-ALBs understand HTTP and HTTPS traffic and can route requests based on URLs, hostnames, and HTTP headers.
-
-Example:
-
-```text id="z5shob"
-/api → backend
-/ → frontend
-```
-
----
-
-# NLB
-
-Network Load Balancer operates at Layer 4.
-
-Interview Answer:
-
-NLBs are optimized for extremely high throughput and low latency workloads.
-
----
-
-# ALB vs NLB
-
-| ALB           | NLB            |
-| ------------- | -------------- |
-| Layer 7       | Layer 4        |
-| HTTP/HTTPS    | TCP/UDP        |
-| Content Aware | Faster         |
-| Path Routing  | Simple Routing |
-
----
-
-# Auto Scaling
-
-Auto Scaling automatically adjusts capacity.
-
-Example:
-
-```text id="gnz9rk"
-High CPU
- ↓
-Add Servers
-```
-
-Interview Answer:
-
-Auto Scaling improves application availability while reducing infrastructure costs.
-
----
-
-# CloudWatch
-
-CloudWatch provides monitoring and alerting.
-
-Metrics:
-
-```text id="3y5crv"
-CPU
-Memory
-Network
-Disk
-```
-
-Interview Answer:
-
-CloudWatch helps monitor resource health and automatically trigger alarms when thresholds are exceeded.
-
----
-
-# RDS
-
-RDS is AWS managed database service.
-
-Examples:
-
-```text id="mksyxv"
-MySQL
-PostgreSQL
-Oracle
-SQL Server
-```
-
-Interview Answer:
-
-RDS automates backups, patching, replication, and maintenance tasks, reducing operational overhead.
-
----
-
-# RDS Troubleshooting
-
-Question:
-
-Application is slow.
-
-Interview Answer:
-
-I would review database CPU utilization, memory usage, active connections, slow query logs, IOPS, storage latency, and performance insights to identify bottlenecks.
-
----
-
-# Route53
-
-Route53 provides DNS services.
-
-Example:
-
-```text id="m7rwdo"
-www.company.com
-```
-
-resolves to:
-
-```text id="9rmdx4"
-ALB Endpoint
-```
-
----
-
-# VPC Peering
-
-VPC Peering enables communication between VPCs.
-
-Interview Answer:
-
-VPC Peering creates a direct private connection between VPCs without requiring internet access.
-
----
-
-# Transit Gateway
-
-Transit Gateway simplifies large-scale network connectivity.
-
-Instead of:
-
-```text id="hgr99k"
-VPC1 ↔ VPC2
-VPC1 ↔ VPC3
-VPC2 ↔ VPC3
-```
-
-Use:
-
-```text id="l4s2ga"
-Transit Gateway
-      ↓
-All VPCs
-```
-
----
-
-# AWS Security Best Practices
-
-Interview Answer:
-
-AWS environments should implement least privilege IAM policies, MFA enforcement, encryption at rest and in transit, private networking, security monitoring, centralized logging, and regular vulnerability assessments.
-
----
-
-# Cost Optimization
-
-Question:
-
-How do you reduce AWS costs?
-
-Interview Answer:
-
-Cost optimization can be achieved through right-sizing resources, Auto Scaling, Reserved Instances, Savings Plans, storage lifecycle policies, eliminating idle infrastructure, and continuously monitoring usage patterns.
-
----
-
-# Common Production Scenarios
-
-## EC2 Unreachable
-
-Check:
-
-```text id="c9b7u4"
-Security Groups
-NACL
-Route Tables
-Instance Health
-OS Logs
-```
-
----
-
-## S3 Access Denied
-
-Check:
-
-```text id="x3l3ns"
-IAM Policy
-Bucket Policy
-Role Permissions
-SCP
-Permission Boundary
-```
-
----
-
-## High CPU on EC2
-
-Check:
-
-```text id="ql13ah"
-top
-CloudWatch
-Application Logs
-Traffic Patterns
-```
-
----
-
-## Database Slow
-
-Check:
-
-```text id="8m5rtg"
-Connections
-CPU
-Memory
-IOPS
-Slow Queries
-```
-
----
-
-# AWS Topics You Must Know For Interviews
-
-Focus Areas:
-
-```text id="98qluv"
-VPC
-Subnets
-Route Tables
-Internet Gateway
-NAT Gateway
-Security Groups
-NACL
-IAM
-EC2
-S3
-RDS
-ALB
-Auto Scaling
-CloudWatch
-Route53
-```
-
----
-
-# Honest Interview Positioning
-
-For Your Profile:
-
-Interview Answer:
-
-My production experience has primarily been on OCI. For AWS, I have completed Cloud Practitioner level training, hands-on labs, and personal projects involving networking, IAM, compute, storage, monitoring, and deployment concepts. While I have not managed AWS production environments directly, I understand the architecture, services, and operational workflows and can quickly adapt to AWS-based projects.
-
----
-
-# Top Interview Questions
-
-1. Explain request flow from URL to application.
-2. VPC architecture.
-3. Public vs Private subnet.
-4. Internet Gateway vs NAT Gateway.
-5. Security Group vs NACL.
-6. IAM User vs Role.
-7. S3 vs EBS.
-8. ALB vs NLB.
-9. Auto Scaling.
-10. CloudWatch.
-11. Route53.
-12. RDS troubleshooting.
-13. Transit Gateway.
-14. VPC Peering.
-15. Cost Optimization.
-16. EC2 troubleshooting.
-17. S3 access denied troubleshooting.
-18. High availability architecture.
-19. Multi-AZ deployments.
-20. AWS security best practices.
+## Quick Revisn
+
+| p | Key Conc|
+| ------- |--------- |
+| VPC | Loiclly isolted netwrk |
+| Subne | Public/ad |
+| IGW | Inten acce (bidirectional) |
+| NAT Gaway | Outboun ol (brt sbes)
+| Securi Group | Sateful Istane firewall
+| NAC L | Seless Subnet firewall |
+
+| AMI | Me in tmplate|
+| S3 | Objctoag|
+| EB | Brock sorag |
+| ALB | Laye 7 ob ancer |
+| LB | Lyer4 load ancer|
+| R53 | NSece|

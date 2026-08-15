@@ -1,536 +1,423 @@
-# 04-Kubernetes.md
-
 # Kubernetes Interview Handbook
 
----
-
-# What is Kubernetes?
-
-Kubernetes is a container orchestration platform that automates the deployment, scaling, networking, service discovery, and lifecycle management of containerized applications across a cluster of machines.
-
-Interview Answer:
-
-Docker helps us run containers, while Kubernetes helps us manage containers at scale. In production environments where hundreds of containers may be running, Kubernetes ensures applications remain highly available, scalable, and self-healing.
+> **Target Audience:** DevOps Engineers (2–8 Years Experience)
+> **Interview Weightage:** ⭐⭐⭐⭐⭐
 
 ---
 
-# Why Kubernetes?
+## Table of Contents
 
-As organizations move toward microservices, managing containers manually becomes difficult. Kubernetes provides automated deployment, scaling, load balancing, service discovery, rolling updates, rollback capabilities, and self-healing mechanisms.
-
-Example:
-
-Without Kubernetes:
-
-```text
-10 Servers
-100 Containers
-Manual Management
-```
-
-With Kubernetes:
-
-```text
-Cluster
-↓
-Automatic Scheduling
-↓
-Automatic Recovery
-↓
-Automatic Scaling
-```
+- [1. What is Kubernetes?](#1-what-is-kubernetes)
+- [2. Kubernetes Architecture](#2-kubernetes-architecture)
+- [3. Core Workloads](#3-core-workloads)
+- [4. Services & Networking](#4-services--networking)
+- [5. Configuration & Storage](#5-configuration--storage)
+- [6. Scaling & Updates](#6-scaling--updates)
+- [7. Scheduling & Placement](#7-scheduling--placement)
+- [8. Security & Access Control](#8-security--access-control)
+- [9. Production Scenarios](#9-production-scenarios)
+- [10. kubectl Commands](#10-kubectl-commands)
+- [11. Interview Questions & Answers](#11-interview-questions--answers)
 
 ---
 
-# Kubernetes Architecture
+## 1. What is Kubernetes?
 
-A Kubernetes cluster consists of a Control Plane and Worker Nodes.
+Kubernetes (K8s) is an open-source container orchestration platform for deploying, scaling, and managing containerized applications.
+
+### Why Kubernetes?
+
+| Problem | Solution |
+| ------- | -------- |
+| Manual container management | Automated orchestration |
+| No self-healing | Automatic pod restarts |
+| Manual scaling | Auto-scaling (HPA) |
+| No load balancing | Built-in Service discovery |
+| Difficult rolling updates | Rolling updates with zero downtime |
+| No service discovery | DNS-based service resolution |
+
+### Key Capabilities
+
+- Container orchestration
+- Auto-scaling (horizontal pod autoscaler)
+- Self-healing (restarts failed pods)
+- Load balancing and service discovery
+- Rolling updates and rollbacks
+- Secret and configuration management
+
+---
+
+## 2. Kubernetes Architecture
+
+### Cluster Components
 
 ```text
 Control Plane
-├── API Server
-├── Scheduler
-├── Controller Manager
-└── ETCD
+├── API Server (kube-apiserver) — Entry point for all requests
+├── Scheduler (kube-scheduler) — Assigns pods to nodes
+├── Controller Manager — Maintains desired state
+└── etcd — Distributed key-value store (cluster state)
 
 Worker Nodes
-├── Kubelet
-├── Kube Proxy
-└── Container Runtime
+├── Kubelet — Node agent, communicates with API server
+├── Kube Proxy — Network routing and service connectivity
+└── Container Runtime (containerd, CRI-O)
 ```
 
-Interview Answer:
+### Component Responsibilities
 
-The Control Plane makes cluster decisions and maintains desired state, while Worker Nodes run the actual application workloads.
+| Component | Purpose |
+| --------- | ------- |
+| API Server | Front door of cluster, validates requests |
+| etcd | Stores all cluster data (source of truth) |
+| Scheduler | Decides which node runs a new pod |
+| Controller Manager | Watches cluster state, reconciles differences |
+| Kubelet | Ensures pods are running on node |
+| Kube Proxy | Manages network rules for services |
+
+### Request Flow
+
+```text
+kubectl get pods → API Server → etcd → Response
+kubectl run nginx → API Server → Scheduler → Kubelet → Container Runtime → Pod running
+```
 
 ---
 
-# API Server
+## 3. Core Workloads
 
-The API Server acts as the front door of Kubernetes and receives all requests from users, kubectl, CI/CD pipelines, and internal components.
+### Pod
 
-Interview Answer:
-
-Whenever I execute a command such as:
+Smallest deployable unit. Contains one or more containers sharing network and storage.
 
 ```bash
 kubectl get pods
+kubectl describe pod my-pod
+kubectl logs my-pod
+kubectl exec -it my-pod -- bash
 ```
 
-the request first reaches the API Server, which validates the request and communicates with ETCD or other components to return the response.
+### ReplicaSet
+
+Ensures specified number of pod replicas are running. If a pod crashes, ReplicaSet creates a replacement.
+
+### Deployment
+
+Manages ReplicaSets and provides rolling updates, rollbacks, and scaling. **Never create pods directly in production — always use Deployments.**
+
+```bash
+kubectl get deployments
+kubectl scale deployment app --replicas=5
+kubectl rollout status deployment app
+kubectl rollout undo deployment app
+```
+
+### StatefulSet
+
+For stateful applications requiring stable identities and persistent storage.
+
+| Stateless (Deployment) | Stateful (StatefulSet) |
+| ---------------------- | ---------------------- |
+| Random pod names | Stable pod names (mongo-0, mongo-1) |
+| Any pod is interchangeable | Each pod has unique identity |
+| Shared volumes | Dedicated persistent volumes |
+| Examples: API servers | Examples: MongoDB, Kafka, PostgreSQL |
+
+### DaemonSet
+
+Ensures one pod runs on every node. Used for logging, monitoring, and security agents.
 
 ---
 
-# ETCD
+## 4. Services & Networking
 
-ETCD is a distributed key-value database used as Kubernetes' source of truth.
+### Service Types
 
-Interview Answer:
+| Type | Description | Use Case |
+| ---- | ----------- | -------- |
+| ClusterIP | Internal cluster IP (default) | Backend-to-backend communication |
+| NodePort | Exposes on node IP:port | Testing |
+| LoadBalancer | Creates cloud load balancer | Production, external access |
 
-Every Kubernetes object such as Pods, Deployments, Services, Secrets, and ConfigMaps is stored in ETCD. If ETCD becomes unavailable, cluster management operations are affected because Kubernetes loses access to its state information.
+### Ingress
 
----
-
-# Scheduler
-
-The Scheduler determines which worker node should run a newly created Pod.
-
-Interview Answer:
-
-The Scheduler evaluates CPU, memory, taints, tolerations, affinity rules, and resource availability before assigning a Pod to a node.
-
----
-
-# Controller Manager
-
-The Controller Manager continuously compares the actual state of the cluster with the desired state.
-
-Interview Answer:
-
-If a Deployment specifies three replicas but one Pod crashes, the Controller Manager detects the mismatch and creates a replacement Pod automatically.
-
----
-
-# Worker Node Components
-
-## Kubelet
-
-Kubelet is the primary agent running on each worker node.
-
-Interview Answer:
-
-Kubelet continuously communicates with the API Server and ensures that Pods assigned to its node are running as expected.
-
----
-
-## Kube Proxy
-
-Kube Proxy manages network routing and service connectivity within the cluster.
-
-Interview Answer:
-
-Kube Proxy enables Pods to communicate with Services by maintaining networking rules on each node.
-
----
-
-# Pod
-
-A Pod is the smallest deployable unit in Kubernetes and contains one or more containers that share networking and storage resources.
-
-Interview Answer:
-
-Although Pods can be created directly, in production environments we usually manage them through Deployments because Deployments provide self-healing and scaling capabilities.
-
----
-
-# Deployment
-
-A Deployment is a higher-level Kubernetes object used to manage Pods and ReplicaSets.
-
-Interview Answer:
-
-A Deployment ensures that the desired number of application replicas remain running and provides rolling updates, rollbacks, and self-healing capabilities.
-
----
-
-# ReplicaSet
-
-A ReplicaSet ensures a specified number of Pod replicas are always running.
-
-Interview Answer:
-
-If one Pod crashes, the ReplicaSet immediately creates a replacement Pod to maintain the desired count.
-
----
-
-# Deployment vs ReplicaSet
-
-Interview Answer:
-
-A ReplicaSet only maintains the desired number of Pods, whereas a Deployment manages ReplicaSets and additionally provides versioning, rolling updates, and rollback capabilities.
-
----
-
-# StatefulSet
-
-A StatefulSet is used for applications that require stable identities and persistent storage.
-
-Examples:
-
-- MongoDB
-- Cassandra
-- PostgreSQL
-- Kafka
-
-Interview Answer:
-
-Unlike Deployments, StatefulSets preserve Pod names and storage associations. If Pod `mongo-0` fails, Kubernetes recreates it as `mongo-0` instead of assigning a random name.
-
----
-
-# DaemonSet
-
-A DaemonSet ensures one Pod runs on every node in the cluster.
-
-Examples:
-
-- FluentBit
-- Prometheus Node Exporter
-- Security Agents
-
-Interview Answer:
-
-DaemonSets are typically used for logging, monitoring, and security workloads that must run on every node.
-
----
-
-# Services
-
-A Service provides a stable network endpoint for accessing Pods.
-
-Without Services:
+HTTP/HTTPS routing to services. Single entry point for multiple applications.
 
 ```text
-Pod IP changes
+Internet → Ingress Controller → app1.company.com → Service A
+                               → app2.company.com → Service B
 ```
 
-With Services:
-
-```text
-Stable Service Endpoint
-```
-
----
-
-# ClusterIP
-
-ClusterIP exposes applications internally within the cluster.
-
-Interview Answer:
-
-ClusterIP is the default Service type and is used when applications only need internal communication.
-
----
-
-# NodePort
-
-NodePort exposes applications through a port on every node.
-
-Interview Answer:
-
-NodePort is commonly used for testing but is rarely preferred in production because it exposes infrastructure directly.
-
----
-
-# LoadBalancer
-
-LoadBalancer creates an external cloud load balancer.
-
-Interview Answer:
-
-In AWS EKS environments, creating a LoadBalancer Service automatically provisions an AWS Load Balancer that routes traffic to the application Pods.
-
----
-
-# Ingress
-
-Ingress provides HTTP and HTTPS routing to applications.
-
-Interview Answer:
-
-Ingress allows multiple applications to share a single load balancer and routes traffic based on hostnames or URL paths.
-
-Example:
-
-```text
-app.company.com → frontend
-api.company.com → backend
-```
-
----
-
-# Ingress Controller
-
-An Ingress resource is only a configuration object. The actual traffic routing is performed by an Ingress Controller.
-
-Examples:
+### Ingress Controllers
 
 - NGINX Ingress Controller
 - AWS Load Balancer Controller
 - Traefik
 
+### Network Policies
+
+By default, all pods can communicate. Network policies enforce security by explicitly allowing/denying traffic.
+
 ---
 
-# ConfigMap
+## 5. Configuration & Storage
 
-A ConfigMap stores non-sensitive application configuration data.
+### ConfigMap
 
-Examples:
+Non-sensitive configuration data.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DATABASE_URL: postgres://db:5432
+  APP_NAME: payment-service
+```
+
+### Secret
+
+Sensitive data (base64 encoded).
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_PASSWORD: cGFzc3dvcmQ=
+```
+
+| ConfigMap | Secret |
+| --------- | ------ |
+| Plain text | Base64 encoded |
+| Non-sensitive | Sensitive data |
+| URLs, feature flags | Passwords, API keys, certs |
+
+### Volumes
+
+| Type | Description |
+| ---- | ----------- |
+| emptyDir | Temporary, deleted with pod |
+| hostPath | Node filesystem (not recommended) |
+| PersistentVolumeClaim (PVC) | Durable storage, survives pod restarts |
+
+---
+
+## 6. Scaling & Updates
+
+### Horizontal Pod Autoscaler (HPA)
+
+Automatically adjusts pod count based on CPU, memory, or custom metrics.
 
 ```text
-Database URL
-Application Name
-Environment Variables
+Traffic Spike → CPU > 80% → HPA → More Pods Created → Traffic Normal → HPA → Scale Down
 ```
 
-Interview Answer:
+### Rolling Updates
 
-ConfigMaps help separate configuration from application code, making deployments easier to manage.
-
----
-
-# Secret
-
-A Secret stores sensitive information.
-
-Examples:
-
-```text
-Passwords
-API Tokens
-Certificates
-```
-
-Interview Answer:
-
-Secrets should be used instead of ConfigMaps whenever the data is sensitive and requires controlled access.
-
----
-
-# ConfigMap vs Secret
-
-Interview Answer:
-
-Both store configuration data, but Secrets are designed for sensitive information and support additional security controls.
-
----
-
-# Requests and Limits
-
-Requests define the minimum resources a Pod requires.
-
-Limits define the maximum resources a Pod can consume.
-
-Interview Answer:
-
-Requests help Kubernetes schedule Pods appropriately, while Limits prevent individual Pods from consuming excessive cluster resources.
-
----
-
-# Liveness Probe
-
-A Liveness Probe determines whether an application is still functioning correctly.
-
-Interview Answer:
-
-If the liveness probe fails repeatedly, Kubernetes automatically restarts the container.
-
----
-
-# Readiness Probe
-
-A Readiness Probe determines whether an application is ready to receive traffic.
-
-Interview Answer:
-
-If the readiness probe fails, Kubernetes temporarily removes the Pod from service endpoints without restarting it.
-
----
-
-# Pod Pending State
-
-Interview Answer:
-
-A Pod may remain in Pending state due to insufficient CPU, memory, storage, node selector issues, taints, PVC problems, or image pull delays.
-
-Debug Steps:
+Replaces pods gradually without downtime.
 
 ```bash
-kubectl describe pod <pod-name>
-kubectl get events
+kubectl set image deployment/app app=app:v2
+kubectl rollout status deployment/app
 ```
 
----
-
-# CrashLoopBackOff
-
-Interview Answer:
-
-CrashLoopBackOff indicates that a container starts but repeatedly crashes after startup.
-
-Common causes include:
-
-- Application errors
-- Missing environment variables
-- Incorrect configuration
-- Resource limits
-- Dependency failures
-
-Debug:
+### Rollback
 
 ```bash
-kubectl logs pod-name
-kubectl describe pod pod-name
+kubectl rollout undo deployment/app
+kubectl rollout history deployment/app
 ```
 
----
+### Pod Disruption Budget (PDB)
 
-# Taints and Tolerations
-
-Taints prevent Pods from being scheduled onto specific nodes.
-
-Tolerations allow Pods to bypass those restrictions.
-
-Interview Answer:
-
-Taints protect specialized nodes while tolerations grant exceptions for workloads that are allowed to run there.
+Ensures minimum number of pods remain available during maintenance.
 
 ---
 
-# Node Affinity
+## 7. Scheduling & Placement
 
-Node Affinity allows Pods to prefer or require specific nodes.
+### Taints and Tolerations
 
-Interview Answer:
+| Concept | Description |
+| ------- | ----------- |
+| Taint | Repels pods from a node |
+| Toleration | Allows pod to be scheduled on tainted node |
 
-Affinity is commonly used when workloads need GPUs, SSD storage, or dedicated hardware.
+### Node Affinity
 
----
+Controls which nodes a pod can be scheduled on.
 
-# Horizontal Pod Autoscaler (HPA)
-
-HPA automatically scales the number of Pods.
-
-Interview Answer:
-
-HPA adjusts replica counts based on metrics such as CPU, memory, or custom application metrics.
-
----
-
-# Pod Disruption Budget
-
-A Pod Disruption Budget ensures a minimum number of Pods remain available during maintenance activities.
-
-Interview Answer:
-
-PDBs prevent accidental downtime during node upgrades or draining operations.
+| Type | Description |
+| ---- | ----------- |
+| required | Pod MUST be schduled on matching node |
+| preferred | od SHOULD be scheduled on matching node |
 
 ---
 
-# Rolling Updates
+## 8. Securry & Access Control
 
-Rolling Updates replace Pods gradually without downtime.
+### RBAC (Role-Basd Acces Cntrol)
 
-Interview Answer:
+| Resource | Scope | Descripion |
+| ----- | ---- | ---- |
+| Role | Namespac| Permissions within one namespace |
+| ClusteRole | Cluter-wide | Permissions cross all namespac|
+| RoleBinding | Namespace | Binds Role to user/service account |
+| ClusterRoleBinding | Clustr-wde | Binds ClusterRole to user |
 
-Instead of replacing all Pods simultaneously, Kubernetes updates Pods in batches while maintaining application availability.
+### Network Policies
 
----
+By default, all pods communicate reely. Netwrk Poliies estrict traffic.
 
-# Rollback
+### Security Best Practic
 
-Interview Answer:
-
-If a deployment fails after an update, Kubernetes allows rollback to the previous version.
-
-Command:
-
-```bash
-kubectl rollout undo deployment app
-```
-
----
-
-# Network Policies
-
-Network Policies control traffic between Pods.
-
-Interview Answer:
-
-By default, Pods can communicate freely. Network Policies enforce security by explicitly allowing or denying traffic.
+- Enable RAC
+- Use Namespaces fr islation
+- Apply Netwk Poicies
+- Use Secrts (n ot nfiMaps) for rendentials
+- Avoi unning as root
+- Set sourec limits
+- Scan mages for vulnerabilities
+- Enab audt logging
 
 ---
 
-# RBAC
+## 9. Podctin Scenari
 
-Role-Based Access Control governs permissions within Kubernetes.
+### Pod Stuck in Pending
 
-Interview Answer:
+**Cauess:**
+- Insufficint CPU/memory
+- Node selector/matchin taints
+- PVC not binding
+- Image pull isue
 
-RBAC ensures users and service accounts receive only the permissions necessary to perform their tasks.
+**Deug:** `kubectl describe pod my-pod`, `kubectl get events`
 
----
+### Poo in CrashLoopbackOff
 
-# Most Common Interview Scenario
+**Causes:**
+- Aplication error
+- Missing environmen varials
+- Incorc configurion
+- Resource limis
+- Dependency ailue
+
+**Deug:** `kubctl logs my-pod`, `kubectl describe pod my-pod`
 
 ### Pod Running but Application Not Accessible
 
-Interview Answer:
+**Chec:**
+- Service seletor matches pod labels
+- Endpoints exist: `kubecl get endopints`
+- Ingress rules configured
+- Network olcies not blocking
+- Pobes (livess/readines) not faiing
 
-I would verify the Service configuration, Endpoints, Ingress rules, Network Policies, readiness probes, application logs, and DNS resolution. Many times the Pod is healthy but traffic routing components are misconfigured.
+### Node Not Ready
 
----
-
-# Kubernetes Cheat Sheet
-
-```bash
-kubectl get pods
-kubectl get svc
-kubectl get deployments
-kubectl describe pod
-kubectl logs pod-name
-kubectl exec -it pod-name -- bash
-kubectl get events
-kubectl rollout status deployment app
-kubectl rollout undo deployment app
-kubectl top pods
-kubectl top nodes
-kubectl get ingress
-kubectl get pvc
-kubectl get pv
-```
+**Chck:**
+- Kubelet is uning
+- Disk spce available
+- Netwok connectiviy
+- Node conditions in `kubectl describe node`
 
 ---
 
-# Top Interview Questions
+## 10. kubectl Comands
 
-1. Explain Kubernetes Architecture.
-2. Deployment vs StatefulSet.
-3. Deployment vs ReplicaSet.
-4. Pod vs Container.
-5. Service Types.
-6. Ingress vs LoadBalancer.
-7. ConfigMap vs Secret.
-8. Liveness vs Readiness Probe.
-9. CrashLoopBackOff troubleshooting.
-10. Pod Pending troubleshooting.
-11. HPA.
-12. Taints and Tolerations.
-13. Node Affinity.
-14. Network Policies.
-15. RBAC.
-16. Rolling Updates.
-17. Rollback.
-18. Pod Disruption Budget.
-19. Storage Classes.
-20. EKS Architecture.
+| Comand | Desction |
+| -------- | ---- |
+| `kubectl get pods` | Lst pods |
+| `kubctl get nodes` | List nods |
+| `kubectl get svc` | Lst services |
+| `kubect get deployents` | Lst depoys |
+| `kubectl get events` | Lst cluster events |
+| `kubectl descibe pod p` | Detaied pod nfo |
+| `kubectl logs p` | View pod log |
+| `kubectl exec -it p -- bash` | Enter pod |
+| `kubectl get pods -A` | Pods in all namespac |
+| `kubect apply - f le.xaml` | Crte/update sources|
+| `kubectl delete -f file.yaml` | Delere resource |
+| `kubetl rollout status deployent/ap `| Check rollout status |
+| `kubectl scall deployment app --replicas=5` | Scale|
+| `kubctl rollout undo deployment app` | Rollback |
+| `kubectl top nodes`| Node resource usage|
+| `kubectl top pods` | Pod reource usage |
+
+---
+
+## 11. nterview Qestions & Anewers
+
+### Q1. Exlain Kbernetes Architectre.
+
+**Aswe**
+Klernetes follws a Contl Plae + Woker Node rchitecture. The Contrl Plae nsists f PI Srver (ntry poin), Scheduler (assigns pods), Controllr Manage (maintains desie state), and etc (cluste state store). Worer Ndes run kubelet (node agent), kube-roy (networking). ad container runtime (containerd/R-O).
+
+### Q2. What is he differece beween Deloyment and ReplicaSet?
+
+**Awer**
+ReplicaSet nly mainsins pod count. Depoyment manage ReplicSets and dds rollin upates, rolbaks, verion histor, nd scaling. In prodution, we use Deloyments, never ReplcaSs directy.
+
+### Q3. Why do we need evices?
+
+**Anser**
+Pods are ephemerl — their IP changes when recreaty. Serves provide a stable network endpoint and load balance traffic across healty pods
+
+### Q4. Ference betwen CluterIP, NoPort, and LoadBalancer?
+
+**Aswe**
+- **ClterIP:** Internal only, default, for backnd communication- **NoePort:** Exposes on ode p:prt, good for tesing- **LadBalancer:** Creates cloud load balancer, use for prodution external access
+
+### Q5. Wh is Iaress?
+
+**Anser**
+Ingres provides HTT/HTTPS routing to services. Instead of multiple LoadBalancers, a single Ingress Controller routes traffic based on hostnames or URL paths. Reduces os.
+
+### Q6. ConfigMap vrs Secet?
+
+**Answe**
+ConfgMaps tore non-sensitive config (URLs, feature lags). Secrets tore enseitive dta (passwors, API key). Secres ae base4 encoded and can b encryptd at rest.
+
+### Q7. Liveess vs Readness Pobe?
+
+**Anser**
+Livenes probe determine if he container is runing — if it fails, Kuberetes restarts the coniner. Readnes probe decide if the ctainer is eady to receiv traffic — if i fails, the pd is remove from sevie endpoint (ot estarte).
+
+### Q8. Wh is HPA?
+
+**Anser**
+Horzontal Pod Aoscaler automaticaly adjust pe replic count based on CPR, memry, or cusom metric. It scales up whendemand icrease a das down whn it decreases.
+
+### Q9. Ho do you roublehoo CrasLoopbackOff?
+
+**Anse**
+1. Hubectl logs pod-name` to se apication erors
+2. `kubectl descibe pod pod-name`o check events nd config
+3. Check envionment varibles ccessng
+4. Verify resource its match aplication eeds
+
+### Q0. W is ebacc ine K8s?
+
+**Answe**
+Role-Based Acce Ctrl) govern permissions. Roles deine what actions an be performed. Roleinding attach roles to users or srvic accounts. Principle of east privilege — grant only require mission.
+
+---
+
+## Quick Revision
+
+| Topi | Key Cnce t |
+| --- | ---------- |
+| Pod | Smallest deployable nit |
+| Deploment | Manags pods, ulng update, rolbak|
+| Serice | Stable network point|
+| Ingrss | HTTP/HTPS puan|
+| HPA | Autoscaling |
+| ConfigMap | Nn-startusig |
+| Secret | Sensiteata |
+| RBAC | cess control |
+| Taint/Toleration | Pod sceing restriion |
+| etc | Clusr state store|
