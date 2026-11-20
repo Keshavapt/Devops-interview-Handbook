@@ -611,7 +611,7 @@ Deploy
 
 ---
 
-# InvestorAI Focus Areas
+# High-Priority Interview Focus Areas
 
 Most likely discussion areas:
 

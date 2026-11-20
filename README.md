@@ -9,6 +9,7 @@
 
 | # | File | Focus |
 |---|------|-------|
+| 00 | [00-Core-DevOps-Fundamentals.md](00-Core-DevOps-Fundamentals.md) | DevOps Fundamentals |
 | 01 | [01-Linux.md](01-Linux.md) | Linux Fundamentals & Troubleshooting |
 | 02 | [02-Git-GitLab.md](02-Git-GitLab.md) | Git & GitLab CI/CD |
 | 03 | [03-Docker.md](03-Docker.md) | Docker & Containerization |
@@ -20,9 +21,9 @@
 | 09 | [09-Monitoring-Observability.md](09-Monitoring-Observability.md) | Monitoring, Logs & Alerting |
 | 10 | [10-Scripting-Automation.md](10-Scripting-Automation.md) | Bash, Python, boto3 & Automation |
 | 11 | [11-Production-Scenarios.md](11-Production-Scenarios.md) | Production Troubleshooting & RCA |
-| 11 | [11-HR-Behavioural.md](11-HR-Behavioural.md) | Behavioral Interview Questions |
-| 12 | [12-System-Design.md](12-System-Design.md) | System Design & Architecture |
-| Core | [Core_DevOps_Fundamentals.md](Core_DevOps_Fundamentals.md) | DevOps Fundamentals |
+| 12 | [12-System-Design.md](12-System-Design.md) | Cloud-Native AI Platform Design Discussion |
+| 13 | [13-HR-Behavioral.md](13-HR-Behavioral.md) | Behavioral Interview Questions |
+| Core | [Core_DevOps_Fundamentals.md](Core_DevOps_Fundamentals.md) | DevOps Fundamentals (rename note) |
 | Labs | [practice-labs/](practice-labs/) | Coding Drills & Interview Workbook |
 
 ---
@@ -54,7 +55,6 @@
 - `docker logs -f <container>` — View logs
 - `docker exec -it <container> bash` — Enter container
 - `docker build -t app:1.0 .` — Build image
-- `docker-compose up -d` — Multi-container
 - `docker system prune -a` — Cleanup
 
 ### Kubernetes
@@ -88,3 +88,5 @@
 - `git add . → git commit -m → git push origin main`
 - 16-Stage Pipeline: Checkout → Build → Unit Test → Quality → Security → Package → Docker Build → Scan → Push → Deploy Dev → Integration Test → Deploy QA → Performance Test → Manual Approval → Deploy Production → Smoke Test → Monitor
 - `kubectl rollout undo deployment <name>` — Rollback
+
+---

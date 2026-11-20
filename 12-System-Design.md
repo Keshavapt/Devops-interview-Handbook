@@ -1,4 +1,4 @@
-# 10-System-Design.md
+# 12-System-Design.md
 
 # DevOps & Cloud System Design Interview Handbook
 
@@ -678,7 +678,7 @@ Notifications
 
 ---
 
-# InvestorAI-Type Design Discussion
+# Cloud-Native AI Platform Design Discussion
 
 Question:
 
