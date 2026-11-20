@@ -340,6 +340,9 @@ Ensures minimum replicas during voluntary disruptions (node drains, cluster upgr
 
 ### RBAC (Role-Based Access Control)
 
+### AWS EKS IRSA (IAM Roles for Service Accounts)
+- **How IRSA works:** EKS exposes an OIDC issuer URL. An IAM Role trust policy allows `sts:AssumeRoleWithWebIdentity` from a specific Kubernetes `ServiceAccount` (`system:serviceaccount:<ns>:<sa>`).
+- When a Pod starts with that `ServiceAccount`, EKS injects a projected OIDC JWT token and `AWS_ROLE_ARN`, allowing the AWS SDK to exchange the JWT with AWS STS for temporary, auto-rotating IAM credentials without static AWS keys.
 ```text
 Role (namespace-scoped)     →  RoleBinding (user/SA → Role)
 ClusterRole (cluster-wide)  →  ClusterRoleBinding (user/SA → ClusterRole)

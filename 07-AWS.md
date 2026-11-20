@@ -72,7 +72,15 @@ User -> Route53 (DNS) -> CloudFront (CDN) -> WAF -> ALB -> Target Group -> EC2/E
               +-----------+           +-----------+           +-----------+
               |  Private  |           |  Private  |           |  Private  |
               | Subnet: App|          | Subnet: App|          | Subnet: App|
+                          v                   v                   v
               +-----------+           +-----------+           +-----------+
+              |  Private  |           |  Private  |           |  Private  |
+              | Subnet: DB |          | Subnet: DB |          | Subnet: DB |
+              +-----------+           +-----------+           +-----------+
+
+Multi-AZ deployment: ALB in public subnets, App in private subnets, DB in isolated private subnets.
+```
+
 ---
 
 ## 3. VPC & Networking

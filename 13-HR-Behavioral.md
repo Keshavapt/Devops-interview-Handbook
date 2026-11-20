@@ -52,11 +52,11 @@ My role was impacted as part of a broader organizational restructuring. I am gra
 
 ---
 
-# Why Do You Want to Join InvestorAI?
+# Why Do You Want to Join Our Company?
 
 Interview Answer:
 
-InvestorAI is operating in a domain where reliability, automation, security, and scalability are critical. The opportunity to work on cloud-native platforms, DevOps practices, and security-focused engineering aligns closely with my interests and experience. I am particularly interested in contributing to environments where DevOps and DevSecOps are treated as core engineering functions rather than operational support activities.
+[Company Name] is operating in a domain where reliability, automation, security, and scalability are critical. The opportunity to work on cloud-native platforms, DevOps practices, and security-focused engineering aligns closely with my interests and experience. I am particularly interested in contributing to environments where DevOps and DevSecOps are treated as core engineering functions rather than operational support activities.
 
 ---
 
@@ -233,13 +233,13 @@ This keeps the discussion professional, positive, and mature.
 
 ---
 
-# InvestorAI Interview Focus
+# High-Priority HR Interview Focus
 
 Prepare these answers thoroughly:
 
 ```text id="investorai-focus"
 Tell Me About Yourself
-Why InvestorAI?
+Why This Company?
 Why Oracle Exit?
 Production Incident
 Ownership Example

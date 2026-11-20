@@ -653,6 +653,33 @@ ENV DB_PASSWORD=admin123
 - Clair
 
 ---
+## 16. Senior Production Internals
+
+Exit Code 137 (SIGKILL/OOMKilled) vs 143 (SIGTERM):
+- Exit Code 137: Kernel OOM Kill - the kernel kills the process when memory is exhausted
+- Exit Code 143: SIGTERM - graceful shutdown signal; the process should handle this gracefully
+- Always use exec form ENTRYPOINT ["java", "-jar", "app.jar"] or tini so SIGTERM reaches the app instead of hanging PID 1 /bin/sh.
+- Always handle SIGTERM gracefully in your application main loop.
+
+Distroless Debugging:
+- Distroless images lack /bin/sh and standard debugging tools
+- Use: `kubectl debug pod/<pod-name> -it --image=busybox:1.36 --target=<container-name>`
+- Or: `docker run --pid container:<id> --network container:<id> nicolaka/netshoot`
+- Without /bin/sh, use /proc filesystem, /sys filesystem, and kernel logs for debugging
+
+BuildKit Secret Mounts:
+- Use `RUN --mount=type=secret,id=npmrc,target=/root/.npmrc` instead of ARG/ENV
+- Build-time secrets never land in the final image layer
+- The --mount=type=tmpfs approach also works for runtime-only secrets
+
+Non-Root Volume Permissions:
+- Set `securityContext.fsGroup: 1001` in Kubernetes Pod specs when mounting volumes for non-root USER 1001 containers
+- For containers running as USER 1001, set `securityContext.runAsNonRoot: true` and `securityContext.runAsUser: 1001`
+- Ensure volume permissions allow access for GROUP 1001 without root privileges
+
+---
+## 16. Docker Troubleshooting
+---
 
 ## 16. Docker Troubleshooting
 
@@ -921,187 +948,6 @@ Containers communicate through:
 **Answer:**
 `docker-compose exec` runs a command in a running service container. `docker-compose run` runs a one-off command in a new container.
 
-### Q7. What is the difference between `docker-compose up` and `docker-compose up --build`?
-
-**Answer:**
-`docker-compose up` uses existing images. `docker-compose up --build` rebuilds images before starting services.
-
-### Q8. What is the difference between `docker-compose up` and `docker-compose up --scale`?
-
-**Answer:**
-`docker-compose up` starts services with default replica count. `docker-compose up --scale web=3` starts 3 replicas of the web service.
-
-### Q9. What is the difference between `docker-compose up` and `docker-compose up --no-recreate`?
-
-**Answer:**
-`docker-compose up` recreates containers if config changed. `docker-compose up --no-recreate` never recreates existing containers.
-
-### Q10. What is the difference between `docker-compose up` and `docker-compose up --force-recreate`?
-
-**Answer:**
-`docker-compose up` recreates containers only if config changed. `docker-compose up --force-recreate` recreates all containers regardless of config.
-
-### Q11. What is the difference between `docker-compose up` and `docker-compose up --abort-on-container-exit`?
-
-**Answer:**
-`docker-compose up` continues running even if a container exits. `docker-compose up --abort-on-container-exit` stops all containers if any container exits.
-
-### Q12. What is the difference between `docker-compose up` and `docker-compose up --remove-orphans`?
-
-**Answer:**
-`docker-compose up` leaves orphan containers running. `docker-compose up --remove-orphans` removes containers not defined in the compose file.
-
-### Q13. What is the difference between `docker-compose up` and `docker-compose up --no-deps`?
-
-**Answer:**
-`docker-compose up` starts dependencies first. `docker-compose up --no-deps` does not start dependencies.
-
-### Q14. What is the difference between `docker-compose up` and `docker-compose up --no-start`?
-
-**Answer:**
-`docker-compose up` creates and starts containers. `docker-compose up --no-start` creates containers but does not start them.
-
-### Q15. What is the difference between `docker-compose up` and `docker-compose up --no-build`?
-
-**Answer:**
-`docker-compose up` builds images if missing. `docker-compose up --no-build` does not build images, only uses existing ones.
-
-### Q16. What is the difference between `docker-compose up` and `docker-compose up --always-recreate-deps`?
-
-**Answer:**
-`docker-compose up` recreates dependencies only if config changed. `docker-compose up --always-recreate-deps` always recreates dependencies.
-
-### Q17. What is the difference between `docker-compose up` and `docker-compose up --quiet-pull`?
-
-**Answer:**
-`docker-compose up` shows pull progress. `docker-compose up --quiet-pull` suppresses pull progress output.
-
-### Q18. What is the difference between `docker-compose up` and `docker-compose up --no-color`?
-
-**Answer:**
-`docker-compose up` shows colored output. `docker-compose up --no-color` shows plain output without colors.
-
-### Q19. What is the difference between `docker-compose up -d` and `docker-compose up --detach`?
-
-**Answer:**
-They are the same — `-d` is the shorthand for `--detach`.
-
-### Q20. What is the difference between `docker-compose config` and `docker-compose ps`?
-
-**Answer:**
-`docker-compose config` validates and shows the resolved compose configuration. `docker-compose ps` lists running services.
-
-### Q21. What is the difference between `docker-compose logs` and `docker-compose exec`?
-
-**Answer:**
-`docker-compose logs` shows logs from all services. `docker-compose exec` runs a command in a running service container.
-
-### Q22. What is the difference between `docker-compose top` and `docker-compose ps`?
-
-**Answer:**
-`docker-compose top` shows running processes inside service containers. `docker-compose ps` shows service status (running/stopped).
-
-### Q23. What is the difference between `docker-compose events` and `docker-compose logs`?
-
-**Answer:**
-`docker-compose events` shows real-time events (create, start, stop). `docker-compose logs` shows application output (stdout/stderr).
-
-### Q24. What is the difference between `docker-compose pull` and `docker-compose push`?
-
-**Answer:**
-`docker-compose pull` pulls images for services from registry. `docker-compose push` pushes service images to registry.
-
-### Q25. What is the difference between `docker-compose restart` and `docker-compose up`?
-
-**Answer:**
-`docker-compose restart` restarts existing containers. `docker-compose up` creates/updates containers as needed.
-
-### Q26. What is the difference between `docker-compose version` and `docker version`?
-
-**Answer:**
-`docker-compose version` shows Docker Compose version. `docker version` shows Docker Engine and Client versions.
-
-### Q27. What is the difference between `docker-compose down` and `docker-compose down --rmi all`?
-
-**Answer:**
-`docker-compose down` stops and removes containers, networks. `docker-compose down --rmi all` also removes all images used by services.
-
-### Q28. What is the difference between `docker-compose down` and `docker-compose down --volumes`?
-
-**Answer:**
-`docker-compose down` stops and removes containers, networks. `docker-compose down --volumes` also removes named volumes.
-
-### Q29. What is the difference between `docker-compose build` and `docker-compose up --build`?
-
-**Answer:**
-`docker-compose build` builds images for services. `docker-compose up --build` builds images and then starts services.
-
-### Q30. What is the difference between `docker-compose up` and `docker-compose run`?
-
-**Answer:**
-`docker-compose up` starts all services defined in the compose file. `docker-compose run` runs a one-off command in a service container.
-
----
-
-## 21. Scenario-Based Questions
-
-### Q1. Your application is not accessible from the browser. How do you troubleshoot?
-
-**Answer:**
-1. Check if container is running: `docker ps`
-2. Check port mapping: `docker ps` (verify `-p 8080:80`)
-3. Check logs: `docker logs container-id`
-4. Check firewall/security group rules
-5. Check network configuration
-6. Check if the application inside the container is actually listening on the expected port
-
-### Q2. Your container keeps restarting. What do you check?
-
-**Answer:**
-1. Check logs: `docker logs container-id`
-2. Verify application startup
-3. Check memory limits
-4. Check environment variables
-5. Check dependencies
-6. Check restart policy (`--restart` flag)
-
-### Q3. You get an ImagePullBackOff error. What are the causes?
-
-**Answer:**
-- Wrong image name
-- Authentication issue (private registry)
-- Registry unavailable
-- Image tag doesn't exist
-- Network connectivity issues
-
-### Q4. Your container is consuming high CPU. How do you investigate?
-
-**Answer:**
-1. Check resource usage: `docker stats`
-2. Identify the process: `docker top container-id`
-3. Enter the container: `docker exec -it container-id bash`
-4. Check application logs for issues
-5. Consider resource limits: `--cpus`, `--memory`
-
-### Q5. Your disk is full. How do you clean up Docker?
-
-**Answer:**
-1. Check disk usage: `docker system df`
-2. Remove unused resources: `docker system prune -a`
-3. Remove unused volumes: `docker volume prune`
-4. Remove unused images: `docker image prune -a`
-5. Remove stopped containers: `docker container prune`
-
-### Q6. How do you debug a container that exits immediately?
-
-**Answer:**
-1. Check logs: `docker logs container-id`
-2. Run in interactive mode: `docker run -it image bash`
-3. Check entrypoint/CMD configuration
-4. Check environment variables
-5. Check application crash logs
-
-### Q7. How do you reduce image size for a Java Spring Boot application?
 
 **Answer:**
 1. Use multi-stage builds (Maven builder → JRE runtime)
