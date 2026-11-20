@@ -472,8 +472,8 @@ Login Prompt
 
 **Key Points:**
 1. **BIOS/UEFI** — Hardware initialization
-2. **GRUB2** — Boot loader, chooses kerel
-3. **Kerel** — Loads into memory, initializes devies
+2. **GRUB2** — Boot loader, chooses kernel
+3. **Kernel** — Loads into memory, initializes devices
 4. **Initramfs** — Temporary root fs for hardware loading
 5. **systemd** — First process (PID 1), starts all services
 
@@ -549,7 +549,7 @@ netstat -tulpn
 **Answer:**
 1. Generate a key pair: `ssh-keygen` (public + private keys)
 2. Copy public key to server: `ssh-copy-id user@server`
-3. The public key is added to `~/.ssh/atorized_keys` on the server
+3. The public key is added to `~/.ssh/authorized_keys` on the server
 4. When connecting, the client proves possession of the private key
 5. The server verifies using the stored public key
 
@@ -559,7 +559,7 @@ netstat -tulpn
 - `kill <PID>` sends SIGTERM (signal 15) — graceful shutdown, allows cleanup
 - `kill -9 <PID>` sends SIGKILL (signal 9) — force kill, immediate termination
 
-Always try `kill` first; use `kill -9` ony if the process is unresponsive.
+Always try `kill` first; use `kill -9` only if the process is unresponsive.
 
 ### Q10. What is stored under /var?
 
@@ -575,9 +575,9 @@ The `/var` directory contains variable data:
 ### Q11. What is `strace` and how do you use it?
 
 **Answer:**
-`strace` traces system calls mad by a process. Used for debugging:
+`strace` traces system calls made by a process. Used for debugging:
 ```bash
-strace -p <PID>       # Atach to running process
+strace -p <PID>       # Attach to running process
 strace -c -p <PID>     # Count system calls
 strace -e trace=file <PID>  # Trace only file operations
 ```
@@ -603,8 +603,8 @@ bash -n script.sh
 **Answer:**
 1. **BIOS/UEFI** — Hardware initialization, POST
 2. **GRUB2** — Boot loader loads the kernel
-3. **Kernel** — Mounts root filesystem, initializes devies
-4. **initrf** — Temporary fs for drver loading
+3. **Kernel** — Mounts root filesystem, initializes devices
+4. **initramfs** — Temporary fs for driver loading
 5. **systemd** — PID 1, takes over, starts services
 6. **Login prompt** — System ready
 
@@ -616,23 +616,25 @@ bash -n script.sh
 find /var/log -type f -mtime +30 -delete
 
 # Preview first
-find /var/log -type f -mtie +30
+find /var/log -type f -mtime +30
 
 # With confirmation
-find /var/log -type f -mtime +30 -exerm -i {} \;
+find /var/log -type f -mtime +30 -exec -i {} \;
 ```
 
 ### Q15. What is the difference between `/tmp` and `/var/tmp`?
 
 **Answer:**
 - `/tmp` — Cleared on system reboot
-- `/var/tmp` — Persied across rebots
+- `/var/tmp` — Persisted across reboots
 
 ---
 
-## Quick Revision| Topic | Command/Concept |
+## Quick Revision
+
+| Topic | Command/Concept |
 | ----- | --------------- |
-| File preissions | `chmod 755`, `chown user:group` |
+| File permissions | `chmod 755`, `chown user:group` |
 | Process | `ps -ef`, `top`, `kill PID` |
 | Services | `systemctl start/stop/status/restart` |
 | Disk | `df -h`, `du -sh` |

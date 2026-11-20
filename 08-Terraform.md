@@ -1,6 +1,31 @@
-# 08-Terraform.md
-
 # Terraform Interview Handbook
+
+> **Target Audience:** 5+ Years Experience
+> **Role:** Senior DevOps / Platform Engineer
+> **Interview Weightage:** ⭐⭐⭐⭐⭐
+
+---
+
+## Table of Contents
+
+- [1. What is Terraform?](#1-what-is-terraform)
+- [2. Why Terraform?](#2-why-terraform)
+- [3. Infrastructure as Code (IaC)](#3-infrastructure-as-code-iac)
+- [4. Terraform Architecture](#4-terraform-architecture)
+- [5. Provider](#5-provider)
+- [6. Terraform Workflow](#6-terraform-workflow)
+- [7. Core Commands](#7-core-commands)
+- [8. State Management](#8-state-management)
+- [9. Remote Backend & State Locking](#9-remote-backend--state-locking)
+- [10. Modules](#10-modules)
+- [11. Variables & Outputs](#11-variables--outputs)
+- [12. Multi-Environment Directory Structure](#12-multi-environment-directory-structure)
+- [13. Terraform in CI/CD](#13-terraform-in-cicd)
+- [14. terraform import, Drift & Provisioners](#14-terraform-import-drift--provisioners)
+- [15. Common Interview Scenarios](#15-common-interview-scenarios)
+- [16. Honest Interview Positioning](#16-honest-interview-positioning)
+- [17. Most Asked Interview Questions](#17-most-asked-interview-questions)
+- [18. 5-Minute Quick Revision Table](#18-5-minute-quick-revision-table)
 
 ---
 
@@ -18,7 +43,7 @@ Terraform enables infrastructure to be treated like application code. Instead of
 
 Traditional Infrastructure:
 
-```text id="e1a8pw"
+``` 
 Login AWS
 Create VPC
 Create EC2
@@ -37,7 +62,7 @@ Problems:
 
 Terraform Approach:
 
-```text id="7yec9w"
+``` 
 terraform apply
 ```
 
@@ -61,7 +86,7 @@ Just like developers manage application code in Git repositories, DevOps teams m
 
 # Terraform Architecture
 
-```text id="1a4rqp"
+``` 
 Terraform Code
       ↓
 Provider
@@ -73,7 +98,7 @@ Infrastructure
 
 Example:
 
-```text id="lf8myd"
+``` 
 Terraform
       ↓
 AWS Provider
@@ -89,7 +114,7 @@ Providers allow Terraform to communicate with external platforms.
 
 Examples:
 
-```text id="gpn4qu"
+``` 
 AWS
 Azure
 OCI
@@ -100,7 +125,7 @@ Cloudflare
 
 Example:
 
-```terraform id="2jqv7n"
+```hcl 
 provider "aws" {
  region = "us-east-1"
 }
@@ -116,7 +141,7 @@ Providers act as translators between Terraform and the target platform APIs.
 
 One of the most common interview questions.
 
-```text id="9t7z6y"
+``` 
 terraform init
 terraform plan
 terraform apply
@@ -151,13 +176,13 @@ Preview changes.
 
 Example:
 
-```bash id="f3mpd2"
+```bash 
 terraform plan
 ```
 
 Output:
 
-```text id="8lvcqt"
+``` 
 + Create EC2
 + Create Security Group
 ```
@@ -176,7 +201,7 @@ Create or modify infrastructure.
 
 Example:
 
-```bash id="o8gn9m"
+```bash 
 terraform apply
 ```
 
@@ -194,7 +219,7 @@ Delete infrastructure.
 
 Example:
 
-```bash id="uymx0s"
+```bash 
 terraform destroy
 ```
 
@@ -220,7 +245,7 @@ One of the most important Terraform concepts.
 
 File:
 
-```text id="4v0d2z"
+``` 
 terraform.tfstate
 ```
 
@@ -238,7 +263,7 @@ Terraform uses the state file to track infrastructure resources and understand w
 
 Example:
 
-```text id="hgj7ow"
+``` 
 EC2 Instance
 ID
 IP Address
@@ -253,7 +278,7 @@ All stored in state.
 
 Default Behavior:
 
-```text id="pjq7jk"
+``` 
 terraform.tfstate
 ```
 
@@ -274,7 +299,7 @@ Stores state centrally.
 
 Examples:
 
-```text id="vqk2e8"
+``` 
 AWS S3
 Terraform Cloud
 Azure Storage
@@ -292,7 +317,7 @@ Problem:
 
 Two engineers run:
 
-```bash id="f3oh7n"
+```bash 
 terraform apply
 ```
 
@@ -300,7 +325,7 @@ simultaneously.
 
 Possible Result:
 
-```text id="u1eguv"
+``` 
 State Corruption
 ```
 
@@ -312,7 +337,7 @@ State Locking.
 
 AWS Example:
 
-```text id="4mxjlwm"
+``` 
 S3
  +
 DynamoDB
@@ -332,7 +357,7 @@ Example:
 
 Instead of creating EC2 infrastructure repeatedly:
 
-```text id="mnr9we"
+``` 
 EC2
 Security Group
 IAM Role
@@ -344,7 +369,7 @@ Create one module and reuse it.
 
 Module Structure:
 
-```text id="oj0v8o"
+``` 
 modules/
 └── ec2
     ├── main.tf
@@ -364,13 +389,13 @@ Modules improve reusability, standardization, maintainability, and reduce code d
 
 Root Module:
 
-```text id="mz71pp"
+``` 
 Main Project
 ```
 
 Child Module:
 
-```text id="p5w8xm"
+``` 
 Reusable Component
 ```
 
@@ -388,7 +413,7 @@ Input variables.
 
 Example:
 
-```terraform id="7yz2r4"
+```hcl 
 variable "instance_type" {
  default = "t3.micro"
 }
@@ -408,7 +433,7 @@ Expose resource values.
 
 Example:
 
-```terraform id="g0x4sv"
+```hcl 
 output "instance_ip" {
  value = aws_instance.web.public_ip
 }
@@ -440,7 +465,7 @@ Read existing infrastructure.
 
 Example:
 
-```terraform id="g48l9f"
+```hcl 
 data "aws_vpc" "default" {
  default = true
 }
@@ -458,7 +483,7 @@ Creates infrastructure.
 
 Example:
 
-```terraform id="9v9hj4"
+```hcl 
 resource "aws_instance" "web" {
 }
 ```
@@ -475,13 +500,13 @@ Creates multiple similar resources.
 
 Example:
 
-```terraform id="m4lrbo"
+```hcl 
 count = 3
 ```
 
 Creates:
 
-```text id="i9gc4h"
+``` 
 EC2-1
 EC2-2
 EC2-3
@@ -495,7 +520,7 @@ Creates resources from collections.
 
 Example:
 
-```terraform id="p1a3zr"
+```hcl 
 for_each = {
  dev = "t3.micro"
  prod = "t3.large"
@@ -520,7 +545,7 @@ count works well for identical resources, while for_each is preferred when resou
 
 Terraform compares:
 
-```text id="m5w1az"
+``` 
 Desired State
       vs
 Actual State
@@ -534,7 +559,7 @@ and performs reconciliation.
 
 Example:
 
-```terraform id="mqrjfr"
+```hcl 
 lifecycle {
  prevent_destroy = true
 }
@@ -550,7 +575,7 @@ Lifecycle settings help control how Terraform manages resources and protect crit
 
 Typical Structure:
 
-```text id="iwg1h6"
+``` 
 dev
 qa
 prod
@@ -558,7 +583,7 @@ prod
 
 Example:
 
-```text id="drbh8e"
+``` 
 environments/
 ├── dev
 ├── qa
@@ -575,7 +600,7 @@ Each environment should maintain separate state files and variable configuration
 
 Typical Flow:
 
-```text id="h3r9lg"
+``` 
 Git Commit
       ↓
 Pipeline
@@ -599,7 +624,7 @@ Terraform pipelines generally separate planning from applying changes and often 
 
 # Common Terraform Commands
 
-```bash id="jjy73u"
+```bash 
 terraform init
 terraform fmt
 terraform validate
@@ -609,6 +634,46 @@ terraform destroy
 terraform output
 terraform state list
 ```
+
+---
+
+# terraform import
+
+Import existing infrastructure into Terraform management.
+
+```bash
+# Define the resource in config first, then:
+terraform import aws_instance.web i-0123456789abcdef0
+```
+
+**Steps:**
+1. Define the resource in Terraform configuration
+2. Run `terraform import`
+3. Verify using `terraform plan`
+4. Update the configuration if needed to match the imported resource
+
+---
+
+# Configuration Drift
+
+Drift occurs when real-world infrastructure differs from Terraform state (manual console changes, out-of-band updates).
+
+**Detection:** `terraform plan` shows differences between config/state and real infrastructure.
+
+**Remediation:** Update Terraform config to match reality, or run `terraform apply` to bring real infrastructure back in line with config.
+
+---
+
+# Provisioners vs Ansible
+
+| Terraform Provisioners | Ansible |
+| ---------------------- | ------- |
+| Run during resource creation | Run independently of Terraform |
+| Tied to resource lifecycle | Standalone configuration management |
+| Use when no better option exists | Preferred for config management |
+| `file`, `remote-exec`, `local-exec` | Playbooks, roles, modules |
+
+**Best practice:** Avoid provisioners when possible. Use Terraform for provisioning, Ansible for configuration management.
 
 ---
 
@@ -687,7 +752,7 @@ My production experience is primarily OCI-focused. For Terraform, I have complet
 
 # Terraform Topics To Focus On
 
-```text id="5a4tib"
+``` 
 Terraform Workflow
 State File
 Remote Backend
@@ -704,3 +769,27 @@ Environment Management
 ```
 
 These topics alone cover nearly 80% of Terraform interview discussions for DevOps Engineer and Platform Engineer roles.
+
+---
+
+## 5-Minute Quick Revision Table
+
+| Topic | Key Point |
+| ----- | --------- |
+| Terraform | Infrastructure as Code tool |
+| IaC | Infrastructure managed via code |
+| Workflow | init → validate → plan → apply |
+| State File | Source of truth for resources |
+| Remote Backend | Centralized state (S3, GCS, etc.) |
+| State Locking | Prevents concurrent applies (DynamoDB) |
+| terraform import | Bring existing resources under management |
+| Drift | Real infra differs from state/config |
+| Provisioners | Avoid; use Ansible for config mgmt |
+| Modules | Reusable infrastructure components |
+| Multi-env | Separate state + tfvars per environment |
+| OCI Positioning | Production OCI; hands-on Terraform labs |
+| Sensitive | Mark secrets as sensitive = true |
+| Backend | Never use local state in teams |
+| Providers | AWS, Azure, OCI, Kubernetes, etc. |
+| Plan | Always review before apply |
+| CI/CD | fmt → validate → plan → approval → apply |

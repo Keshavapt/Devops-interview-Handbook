@@ -1,6 +1,8 @@
-# 06-DevSecOps.md
-
 # DevSecOps Interview Handbook
+
+> **Target Audience:** 5+ Years Experience
+> **Role:** Senior DevOps / Platform Engineer
+> **Interview Weightage:** ⭐⭐⭐⭐⭐
 
 ---
 

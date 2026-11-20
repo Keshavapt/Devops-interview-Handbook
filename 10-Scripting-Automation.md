@@ -1,6 +1,8 @@
-# Coding Skills for DevOps Interviews
+# Scripting & Automation Handbook
 
-> **Goal:** Prepare for scripting, automation, and practical coding questions commonly asked in DevOps interviews (4–6 Years Experience).
+> **Target Audience:** 5+ Years Experience
+> **Role:** Senior DevOps / Platform Engineer
+> **Interview Weightage:** ⭐⭐⭐⭐⭐
 
 ---
 
@@ -905,14 +907,6 @@ Infrastructure automation ensures consistency, repeatability, and faster deploym
 
 ---
 
-# 7. CI/CD Automation
-
-One of the primary responsibilities of a DevOps Engineer is automating software delivery.
-
-Instead of manually building and deploying applications, CI/CD pipelines perform these tasks automatically.
-
----
-
 ## Traditional Deployment
 
 ```
@@ -1103,9 +1097,13 @@ We automated our deployments using GitLab CI/CD. The pipeline handled applicatio
 
 # 8. Infrastructure as Code (IaC) Automation
 
-Infrastructure as Code allows infrastructure to be managed using code.
+---
 
-Instead of clicking through cloud consoles, infrastructure is defined declaratively.
+# 8. Infrastructure as Code Tools
+
+**Common IaC tools:** Terraform, AWS CloudFormation, Pulumi, Azure Bicep.
+
+**Terraform** is the most commonly used tool and is covered in detail in 08-Terraform.md.
 
 ---
 
@@ -2313,109 +2311,121 @@ Notify Team
 
 ---
 
-# 18. Explain Your CI/CD Pipeline
+You should be able to explain your automation work in previous projects using the STAR method (Situation, Task, Action, Result). Common behavioral questions include:
 
-This is one of the most frequently asked interview questions.
-
----
-
-## Sample Answer
-
-> In my previous project, developers pushed code to GitLab repositories. Every Merge Request triggered the GitLab CI/CD pipeline. The pipeline checked out the source code, built the application using Maven, executed JUnit test cases, and performed static code analysis using SonarQube. Docker images were then built and scanned using Trivy before being pushed to Amazon ECR. Kubernetes deployments were updated using kubectl, performing rolling updates with zero downtime. After deployment, smoke tests verified the application, and Prometheus and Grafana continuously monitored the environment. If any stage failed, the pipeline stopped immediately, preventing faulty deployments.
+- Tell me about an automation you built
+- How does Git integrate with CI/CD?
+- How do you troubleshoot a failed deployment?
 
 ---
 
-## Pipeline Flow
+# Python Best Practices
 
-```text
-Developer
+## Key Libraries
 
-↓
+- requests - REST APIs
+- boto3 - AWS SDK
+- json - JSON parsing
+- yaml - YAML parsing (K8s, CI/CD)
+- os - Operating system interface
+- subprocess - Execute shell commands (kubectl, docker, terraform)
+- pathlib - Path operations
+- logging - Application logging
 
-Git Push
+---
 
-↓
+## What is subprocess?
 
-Checkout
+Allows Python scripts to execute Linux commands.
 
-↓
+Examples:
+- kubectl
+- docker
+- git
+- terraform
 
-Build
+---
 
-↓
+## What is boto3?
 
-Unit Tests
+Official AWS SDK for Python.
 
-↓
+Used for:
+- EC2
+- S3
+- IAM
+- CloudWatch
+- Lambda
 
-SonarQube
+---
 
-↓
+# 19. Network & File Operations
 
-Security Scan
+Automation scripts frequently interact with network resources and file systems.
 
-↓
+## Common Operations
 
-Docker Build
+- HTTP GET/POST with `requests` library
+- REST API calls for cloud services
+- File reading/writing with `pathlib` and `os`
+- Log file parsing with `grep`, `awk`, `sed` equivalents in Python
+- JSON/YAML configuration file handling
 
-↓
+## Working with subprocess
 
-Image Scan
+Use `subprocess.run()` to execute shell commands from Python:
 
-↓
+```python
+import subprocess
+result = subprocess.run(['kubectl', 'get', 'pods', '-n', 'production'], capture_output=True, text=True)
+print(result.stdout)
+```
 
-Push to ECR
+## Working with boto3
 
-↓
-
-Deploy Dev
-
-↓
-
-Integration Tests
-
-↓
-
-Deploy QA
-
-↓
-
-Approval
-
-↓
-
-Deploy Production
-
-↓
-
-Smoke Tests
-
-↓
-
-Monitoring
+```python
+import boto3
+ec2 = boto3.client('ec2')
+response = ec2.describe_instances()
+for reservation in response['Reservations']:
+    for instance in reservation['Instances']:
+        print(instance['InstanceId'], instance['State']['Name'])
 ```
 
 ---
 
-## Interview Question
+---
 
-### Which stage is most critical?
+# 20. Explain an Automation You Built
 
-**Sample Answer**
+This is one of the most common behavioral questions in DevOps interviews.
 
-Every stage is important, but automated testing and security scanning are especially critical because they prevent defective or vulnerable code from reaching production.
+Interviewers want to understand:
+- Your problem-solving ability
+- Your automation mindset
+- Your technical decisions
+- The impact of your work
+
+Use the **STAR Method**:
+- Situation
+- Task
+- Action
+- Result
 
 ---
 
-# 19. Explain Your Terraform Implementation
+## Example 1 – Deployment Automation
 
-Another common interview topic.
+### Situation
 
----
+Deployments were performed manually by the operations team. Each deployment required:
+- Building the application
+- Creating Docker images
+- Pushing images to the registry
+- Updating Kubernetes deployments
+- Verifying application health
 
-## Sample Answer
-
-> We managed our AWS infrastructure using Terraform. The project was divided into reusable modules for networking, compute, IAM, and load balancing. Terraform state was stored remotely in an S3 bucket with DynamoDB used for state locking. Infrastructure changes were deployed through GitLab CI/CD, where the pipeline executed terraform fmt, validate, plan, and after manual approval, terraform apply. This ensured all infrastructure changes were version-controlled, reviewed, and reproducible.
+The entire process took around 30–40 minutes and often resulted in manual errors.
 
 ---
 

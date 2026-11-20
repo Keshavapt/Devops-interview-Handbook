@@ -1,6 +1,7 @@
 # AWS Interview Handbook
 
-> **Target Audience:** DevOps Engineers (2-8 Years Experience)
+> **Target Audience:** 5+ Years Experience
+> **Role:** Senior DevOps / Platform Engineer
 > **Interview Weightage:** ⭐⭐⭐⭐⭐
 
 ---
@@ -16,8 +17,11 @@
 - [7. Load Balancers](#7-load-balancers)
 - [8. Auto Scaling](#8-auto-scaling)
 - [9. RDS, CloudWatch, Route53](#9-rds-cloudwatch-route53)
-- [10. Production Scenarios](#10-production-scenarios)
-- [11. Interview Questions & Answers](#11-interview-questions--answers)
+- [10. EBS vs EFS vs S3](#10-ebs-vs-efs-vs-s3)
+- [11. Production Scenarios](#11-production-scenarios)
+- [12. Interview Questions & Answers](#12-interview-questions--answers)
+- [13. Oracle DevOps Experience Positioning](#13-oracle-devops-experience-positioning)
+- [14. 5-Minute Quick Revision Table](#14-5-minute-quick-revision-table)
 
 ---
 
@@ -35,20 +39,40 @@
 | ------ | ---------------- |
 | Geographical area | Data center within a region |
 | Multiple AZs per region | Isolated power, cooling, networking |
-| Example: ap-south-1 | Example: ap-south-1a, ap-south-1b |
+| Example: ap-south-1 | Example: ap-south-1a, ap-south-1b, ap-south-1c |
 
 ---
 
 ## 2. Request Flow to Application
 
-One of the most common interview questions.
+### Multi-AZ 3-Tier Request Flow
+
+One of the most common senior-level architecture questions.
 
 ```text
-User → Route53 (DNS) → CloudFront (CDN) → ALB → Target Group → EC2/EKS → Application → RDS
+User -> Route53 (DNS) -> CloudFront (CDN) -> WAF -> ALB -> Target Group -> EC2/EKS (App Tier) -> RDS (Data Tier)
+                                                            |
+                                                        Auto Scaling Group
+                                                            |
+                                                    Multi-AZ (3 AZs for HA)
 ```
 
-**Interview Answer:** When a user accesses an application URL, the browser resolves the domain through Route53 DNS, which returns the Load Balancer address. The Application Load Balancer forwards traffic to healthy backend targets (EC2 or EKS Pods). The application processes the request and retrieves data from backend services or databases.
+**Interview Answer:** When a user accesses an application URL, DNS resolution goes through Route53, which returns the CloudFront/ALB address. Traffic passes through WAF for security filtering, then hits the Application Load Balancer. The ALB distributes traffic across healthy targets in an Auto Scaling Group spread across multiple Availability Zones. The application tier processes requests and retrieves data from RDS (Multi-AZ for high availability). This architecture ensures no single point of failure.
 
+### High Availability Design
+
+```text
+                    az-1                    az-2                    az-3
+              +-----------+           +-----------+           +-----------+
+              |   Public  |           |   Public  |           |   Public  |
+              | Subnet: ALB|           | Subnet: ALB|           | Subnet: ALB|
+              +-----------+           +-----------+           +-----------+
+                          |                   |                   |
+                          v                   v                   v
+              +-----------+           +-----------+           +-----------+
+              |  Private  |           |  Private  |           |  Private  |
+              | Subnet: App|          | Subnet: App|          | Subnet: App|
+              +-----------+           +-----------+           +-----------+
 ---
 
 ## 3. VPC & Networking
@@ -56,36 +80,37 @@ User → Route53 (DNS) → CloudFront (CDN) → ALB → Target Group → EC2/EKS
 ### VPC Components
 
 | Component | Description |
-| ----------- | ----------- |
-| VPC | Oly isolated network in AWS |
-| Subnet| Blic or private segment of VPC |
-| Internet Gateway (IGW) | Bidirectional internet acces | NA Gateway | Outbound only internet for private subnets |
-| Route Tle | Defines treffic routing rules |
-| Securit Group| Sateful instace-level firewal |
-| NACL | Seless subne-level firewl |
+| --------- | ----------- |
+| VPC | Logically isolated virtual network in AWS |
+| Subnet | Logical segment of VPC (public or private) |
+| Internet Gateway (IGW) | Bidirectional internet access for public subnets |
+| NAT Gateway | Outbound-only internet access for private subnets |
+| Route Table | Defines traffic routing rules |
+| Security Group | Stateful instance-level firewall |
+| NACL | Stateless subnet-level firewall |
 
 ### Public vs Private Subnet
 
-| Public Sbnet | Private Subnet |
-| ---------| ----------- |
-| Has route to IGW | N direct internet route |
-| Conains LB, Bastion Host | Conains app server, dbases |
-| Internaccesibl| More secure - no direct access |
+| Public Subnet | Private Subnet |
+| ------------ | -------------- |
+| Has route to IGW | No direct internet route |
+| Contains ALB, Bastion Host | Contains app servers, databases |
+| Internet-accessible | More secure - no direct internet access |
 
-### Securi Group vs NACL
+### Security Group vs NACL
 
 | Security Group | NACL |
-| ------------ | ---- |
+| -------------- | ---- |
 | Instance-level | Subnet-level |
-| Stateful | Steless|
-| Allow rules only | Allw and Deny rules |
-| Default deny inbound | Cnfigurable|
+| Stateful | Stateless |
+| Allow rules only | Allow and Deny rules |
+| Default deny inbound | Configurable |
 
-### NAT Gateay vs Internet Gateway
+### NAT Gateway vs Internet Gateway
 
-**Internat Gaway:** Bidirectional - allows both inbound and outbound internet access for public subnet.
+**Internet Gateway:** Bidirectional - allows both inbound and outbound internet access for public subnets.
 
-**NAT Gateay:** Outbound only - private subnet instances can access internet for updates, patches, but cannot be accessed from internet.
+**NAT Gateway:** Outbound only - private subnet instances can access the internet for updates/patches but cannot be accessed from the internet.
 
 ---
 
@@ -93,229 +118,280 @@ User → Route53 (DNS) → CloudFront (CDN) → ALB → Target Group → EC2/EKS
 
 ### What is EC2?
 
-EC2 provides virtual servers in AWS Cloud.
+EC2 provides virtual servers in AWS Cloud with scalable compute capacity.
 
-### EC2 Componens
+### EC2 Components
 
-| Comonent| Descriptn |
-| -------- | ------- |
-| AMI | Machin Iage template (OS + software) |
-| Instan Type | CP + Memy (t3.mco, m5.large,5.xlarg)| Key Pir | SSH acss certifiates |
-| Securiy Group | Virual firewall |
-| Use Daa | Sttp ript excuted on bor|
+| Component | Description |
+| --------- | ----------- |
+| AMI | Machine image template (OS + software) |
+| Instance Type | CPU + Memory (t3.micro, m5.large, c5.xlarge) |
+| Key Pair | SSH access certificates |
+| Security Group | Virtual firewall |
+| User Data | Bootstrap script |
 
-### EC2 Lifecyce
+### EC2 Instance Types
 
-text
-Launch → Rnn → Stp → Strt → Ternate
-```
-
-**Sto vs Termine:**
-- **Stop:** Instance anc be reated, EBS vumes presved
-- **Teinate:** Pemanently delet, r volum deleted by default
-
----
-
-## 5. IAM (Ientity & AcCs Magement)
-
-### KeyConcepts
-
-| Cncet | Descrition|
-| ------ | ---------- |
-| User| Peanent dentiy for a person |
-| Rle | Teorary ermissions f service|
-| Gup | Colction of uers |
-| Poly | JSon efinin perissins |
-
-### IAM sers Roles
-
-| User | Role |
-| ----| ---- |
-| Peanent idenity | Temprary permissi |
-| F persos | For AWS service |
-| Has ong-term cs | Auto-rotng credentials |
-
-**Interve Aser:** Re plaicated credentis used in applicatn. A EC2instances should e assigned an IAM Rle sinstead of storing Acces Key/Secret Key in code.
+| Family | Use Case | Example |
+| ------ | -------- | ------- |
+| T | Burstable, general purpose | t3.micro, t3.medium |
+| M | Balanced compute/memory | m5.large, m5.xlarge |
+| C | Compute-optimized | c5.large, c5.xlarge |
+| R | Memory-optimized | r5.large, r5.xlarge |
+| I | Storage-optimized | i3.large, i3.xlarge |
 
 ---
 
-## 6.3 (Storage)
+## 5. IAM (Identity & Access Management)
 
-### S3 Basi
+IAM controls **who can access what** through authentication and authorization.
 
-| Featur| Descri ion|
+### IAM Components
+
+- **Users:** Permanent identity for people (Developer, DevOps, Admin)
+- **Groups:** Collection of users with shared permissions
+- **Roles:** Temporary identity for AWS services (EC2 accessing S3)
+- **Policies:** JSON documents defining allowed/denied actions
+
+### IAM User vs Role
+
+| IAM User | IAM Role |
+| -------- | -------- |
+| Permanent identity | Temporary identity |
+| For people | For AWS services |
+| Long-lived credentials | Auto-rotated temporary credentials |
+
+### Least Privilege Principle
+
+Always grant only the minimum permissions required. Never attach `AdministratorAccess` unless absolutely necessary. Use IAM Roles instead of access keys for EC2 instances needing AWS access.
+
+---
+                          |                   |                   |
+---
+
+## 6. S3 (Storage)
+
+S3 is object storage for unstructured data with unlimited scalability.
+
+| Feature | Description |
 | ------- | ----------- |
-| Bubets| Conainer for obects|
-| Obejs | Files sored in buckets |
-| Vresoning | Kee revus verions|
-| Lfecyle Poly | Aumated tier ransiionsr deletio|
+| Storage Class | Standard, IA, Glacier, Intelligent Tiering |
+| Versioning | Keep multiple versions of objects |
+| Lifecycle Policies | Auto-transition objects to cheaper storage |
+| Encryption | SSE-S3, SSE-KMS, SSE-C, Client-side |
+| Access Control | Bucket policies, IAM policies, ACLs |
 
-### S3 vs ES
-
-| S | EBS  |
-| ---| - -- |
-| Object orage | Blck orage |
-| Unlited scalability |Attached to EC |
-| cced via API | Munted a disk|
-| Tim, ackups, logs | Oerain syems, dbases|
-
-### SBesi Prce
-
-- Never mke bucket ublic unless inted
-- Use IAM olic nd Bucket Plicy
-- Eable versoning for dat rotetion
-- Use lifeyce olice to move dta to Glcier for co savings
+**Use cases:** Static website hosting, backup, logs, data lakes, media storage.
 
 ---
 
 ## 7. Load Balancers
 
-### ALB (Aplication LaBalancer
-
-- Layer 7 (HTT/HTPS)
-- Pat-hosd routing
-- SSL termnation
-- Best for wb applitions
-
-### NLB (Neork LaBancer)
-
-- Laye 4 (CP/UP)
-- Exemly high thouhput
-- Low lenty
-- Best for C dataes
-
-### LB vs LB
-
-| ALB | LB |
-|--- | ---- |
-| Lyer 7 | yer 4 |
-| HPTTPS agement| C/UDP routing|
-| Pat/host baed | Se ltin|
-| Conent are | Faer|
+| Feature | ALB (Application) | NLB (Network) |
+| ------- | ----------------- | ------------- |
+| Layer | Layer 7 (HTTP/HTTPS) | Layer 4 (TCP/UDP) |
+| Routing | Path & host-based | High-performance TCP routing |
+| SSL Termination | Yes | Pass-through supported |
+| Best For | Web applications | TCP-based, high-performance workloads |
+| Target Type | IP, instance, Lambda | IP, instance |
 
 ---
 
 ## 8. Auto Scaling
 
-Automatically adds or removes EC2 instances based on demand.
+Auto Scaling automatically adds or removes EC2 instances based on demand.
 
 ### How it Works
 
 ```text
-High CPU → CloudWatch Alarm → Auto Scaling → Launch New EC2 → Traffic Balanced → CPU Normal → Terminate Extra EC2
+High CPU -> CloudWatch Alarm -> Auto Scaling Group -> Launch New EC2 -> Traffic Balanced -> CPU Normal -> Terminate Extra EC2
 ```
+
+### ASG Components
+
+| Component | Purpose |
+| --------- | ------- |
+| Launch Template | Instance configuration (AMI, type, key pair, SG) |
+| Auto Scaling Group | Logical grouping of EC2 instances |
+| Scaling Policy | Rules for when to scale in/out |
+| CloudWatch Alarm | Triggers scaling actions |
+| Health Check | Replaces unhealthy instances |
 
 ### Benefits
 
-- Hih vailabilit
-- Cot optimiztion
-- Scale ut/in automatically
-- Self-healig (replaces unhealthy inces)
+- High availability (replaces unhealthy instances)
+- Cost optimization (scale in during low demand)
+- Automatic scale in/out based on metrics
+- Self-healing
+
+### Scaling Policies
+
+- **Target Tracking:** Maintain a metric at target value (e.g., CPU at 50%)
+- **Step Scaling:** Add/remove instances in steps based on alarm breach
+- **Simple Scaling:** Add/remove fixed number of instances
+- **Scheduled Scaling:** Scale based on predictable patterns
 
 ---
 
-## 9. RDS, CloudWatch, Route5353
+## 9. RDS, CloudWatch, Route53
 
-### RDS
+### RDS (Relational Database Service)
 
-Managed datase serice. Suprs MySQL, PosreSQL, Oracle, SQL Server, MariaDB.
+Managed database service supporting MySQL, PostgreSQL, Oracle, SQL Server, MariaDB.
 
-**Befits:**
-- utoated backups
-- Paching
-- Mul-AZ replicati (high availbility)
-- Read reicas (scalability)
+| Benefit | Description |
+| ------- | ----------- |
+| Automated backups | Point-in-time recovery |
+| Patching | Automated OS and database patching |
+| Multi-AZ replication | Synchronous standby for high availability |
+| Read replicas | Asynchronous read scaling |
 
 ### CloudWatch
 
-Motoring and alertng service.
+Monitoring and alerting service for AWS resources.
 
-| Metric | Dscription |
-| ------- | ----------- |
-| CPU Uiliztion| EC/RDS prcentage|
-| Memy Usage| Btained via Cloudatch agent |
-| Netwerk| Bye in/ut|
-| Di| Rea/WrtOPS|
+| Metric | Description |
+| ------ | ----------- |
+| CPU Utilization | EC2/RDS percentage |
+| Memory Usage | Via CloudWatch agent |
+| Network | Bytes in/out |
+| Disk | Read/Write IOPS |
 
-### Rout5353
+### Route53
 
-DNS service. Routes domains to AWS resources (ALB, CloudFront, EC2).
+DNS service routing domains to AWS resources (ALB, CloudFront, EC2).
 
-**Routing Policys**
-- Simpel
-- Weited
-- Latency-bad
-- Ge-location
-- Failover
-
----
-
-## 10. Production Scenarios
-
-### EC2 Unrechle
-
-Check: Securty Grou, NA, Out Tables, Health, OS Logs.
-
-### S3 AcesDenied
-
-Check: IAM Poicy, Bucket Plcy, Ro Permisns, SCP.
-
-### Hi CPU n EC
-
-Check: `tp`, Cloutchogs, Aplicn Logs, Traffic Paterns.
-
-### Dase Slow
-
-Check: Conneions, CP, Memory, PS, Slow Qu, Performanc Isht.
+| Routing Policy | Description |
+| -------------- | ----------- |
+| Simple | Single resource, no health check |
+| Weighted | Route based on assigned weights |
+| Latency-based | Route to lowest latency region |
+| Geolocation | Route based on user location |
+| Failover | Route to secondary on failure |
 
 ---
 
-## 11. Ierive Queions & Aswrs
+## 10. EBS vs EFS vs S3
 
-### Q1. Exlai reqest fo om UR to aplication.
+| Feature | EBS | EFS | S3 |
+| ------- | --- | --- | --- |
+| Type | Block Storage | Network File Storage | Object Storage |
+| Access | Single EC2 instance | Multiple EC2 instances | Any number of clients |
+| Performance | High performance | Shared storage | Unlimited scalability |
+| AZ Scope | Single Availability Zone | Multi-AZ | Region-wide |
+| Use Case | OS, databases | Shared application data | Static files, backups |
+| Access Method | Mounted as disk | Mounted via NFS v4 | Accessed via API |
 
-**Answr:** User → Route53 → ALB → Targt Grop → EC2/EKS → Aplication → Dataase.
+**Use EBS** for operating systems and databases requiring high-performance block storage attached to a single EC2 instance.
 
-### Q2. Pblic vs Pivate Subnetic?**
+**Use EFS** for shared application data accessed by multiple EC2 instances across AZs.
 
-**Answr:** Public subs hav ute to IGW, contain L/asto. Pivate sbs have no direc internt, cotin app servers/datases for secrity.
+**Use S3** for object storage - static files, backups, data lakes, media content.
 
-### Q3. Secuti Goup vs NACL?
+---
+                          v                   v                   v
+              +-----------+           +-----------+           +-----------+
+              |  Private  |           |  Private  |           |  Private  |
+              | Subnet: DB |          | Subnet: DB |          | Subnet: DB |
+              +-----------+           +-----------+           +-----------+
 
-**Anwer:** SG is instance-level, stateul, allow-nly. NACL is subent-level, stteless, sups allow+dy.
+Multi-AZ deployment: ALB in public subnets, App in private subnets, DB in isolated private subnets.
+```
+---
 
-### Q4. Srity Group vs NAC? (Repeate)
+## 11. Production Scenarios
 
-### . IAM User vs Ro?**Anser:** User is permannt entity for ersons. Role is emporary perissi for AWS srvices since it mtes credential autoicaly.
+### Symptom → Root Cause → Diagnostic Commands
+
+| Symptom | Likely Root Cause | Diagnostic Checks |
+| ------- | ----------------- | ----------------- |
+| EC2 Unreachable | Security Group, NACL, Route Table, health, OS logs | SG rules, NACL rules, route tables, instance status |
+| S3 AccessDenied | IAM policy, bucket policy, IAM permissions, SCP | IAM policies, bucket policies, SCP restrictions |
+| High CPU on EC2 | Under-provisioned, traffic spike, runaway process | `top`, CloudWatch metrics, application logs, traffic patterns |
+| Database Slow | Inefficient queries, missing indexes, connection exhaustion | CloudWatch RDS metrics, slow query log, connections |
+
+### EC2 Unreachable Playbook
+
+1. Check Security Group rules (inbound/outbound)
+2. Check NACL rules (subnet-level)
+3. Check route tables (IGW/NAT Gateway routes)
+4. Check instance status (system status, instance status)
+5. Check OS logs and application logs
+
+### S3 AccessDenied Playbook
+
+1. Check IAM user/role policies
+2. Check S3 bucket policy
+3. Check IAM permissions boundaries
+4. Check SCP (Service Control Policies)
+5. Check encryption settings (KMS key access)
+
+---
+
+## 12. Interview Questions & Answers
+
+### Q1. Explain the request flow from URL to application.
+
+**Answer:** User → Route53 (DNS resolution) → CloudFront (CDN edge) → WAF (security) → ALB (Layer 7 load balancing) → Target Group → EC2/EKS instances in Auto Scaling Group → Application → RDS (database). The ALB distributes traffic across healthy targets across multiple AZs for high availability.
+
+### Q2. Public vs Private Subnet?
+
+**Answer:** Public subnets have a route to an Internet Gateway and contain internet-facing resources (ALB, bastion hosts). Private subnets have no direct internet route and contain backend resources (app servers, databases) accessed via NAT Gateway for outbound updates.
+
+### Q3. Security Group vs NACL?
+
+**Answer:** Security Groups are stateful, instance-level firewalls with allow-only rules and default deny inbound. NACLs are stateless, subnet-level firewalls supporting both allow and deny rules. Security Groups evaluate first, then NACLs.
+
+### Q4. IAM User vs Role?
+
+**Answer:** IAM User is a permanent identity for people with long-lived credentials. IAM Role is a temporary identity for AWS services that auto-rotates credentials. Use roles for EC2 instances needing AWS service access instead of storing access keys.
+
+### Q5. EBS vs EFS?
+
+**Answer:** EBS is block storage attached to a single EC2 instance - use for OS volumes and databases. EFS is network file storage accessible by multiple EC2 instances across AZs - use for shared application data. EBS is single-AZ; EFS is multi-AZ.
 
 ### Q6. S3 vs EBS?
 
-**Anser:** S3 is obect orage (vet, ilabale). S is bck srage (atthed to E2, hih prfrmance).
+**Answer:** S3 is object storage (unlimited scalability, API access) for static files and backups. EBS is block storage (attached to EC2, high performance) for OS and databases.
 
-### Q7. ALB vs NB?
+### Q7. ALB vs NLB?
 
-**Anser:** ALB isLaer 7 (HTTP/HTTPS, conent awre). NLB is Laye4 (CP/UDP, hi throughput, low latency).
+**Answer:** ALB is Layer 7 (HTTP/HTTPS) with path/host-based routing and SSL termination - best for web applications. NLB is Layer 4 (TCP/UDP) with high throughput and low latency - best for TCP-based or high-performance workloads.
 
-### Q8. How do uroulesho a high CPU on EC2?
+### Q8. How do you troubleshoot high CPU on EC2?
 
-**Anwer:** Ceck with `top`, review CloudWa ch metrics, check application logs, analze traffic patterns, ider upzng.
+**Answer:** Check with `top` or CloudWatch metrics to identify the process. Review application logs for runaway processes or traffic spikes. Analyze traffic patterns. Consider scaling up (larger instance) or scaling out (more instances via ASG).
 
 ---
 
-## Quick Revisn
+## 13. Oracle DevOps Experience Positioning
 
-| p | Key Conc|
-| ------- |--------- |
-| VPC | Loiclly isolted netwrk |
-| Subne | Public/ad |
-| IGW | Inten acce (bidirectional) |
-| NAT Gaway | Outboun ol (brt sbes)
-| Securi Group | Sateful Istane firewall
-| NAC L | Seless Subnet firewall |
+**Interview Answer:**
 
-| AMI | Me in tmplate|
-| S3 | Objctoag|
-| EB | Brock sorag |
-| ALB | Laye 7 ob ancer |
-| LB | Lyer4 load ancer|
-| R53 | NSece|
+At Oracle, we primarily worked with IAM, EC2, VPC, Security Groups, ALB, Auto Scaling, S3, ECR, CloudWatch, Route53, and EKS. Infrastructure was provisioned using Terraform, while deployments were handled through GitLab CI/CD. We designed multi-AZ architectures for high availability, used private subnets for databases, IAM roles for service access (no access keys), and Auto Scaling groups for cost optimization and self-healing.
+
+---
+
+## 14. 5-Minute Quick Revision Table
+
+| Topic | Key Concept |
+| ----- | ----------- |
+| Region | Geographic location with multiple AZs |
+| AZ | Isolated data center within a region |
+| VPC | Logically isolated virtual network |
+| IGW | Bidirectional internet access |
+| NAT Gateway | Outbound-only internet for private subnets |
+| Security Group | Stateful instance-level firewall |
+| NACL | Stateless subnet-level firewall |
+| EC2 | Virtual servers in AWS |
+| ASG | Auto scale EC2 instances based on demand |
+| ALB | Layer 7 load balancer for HTTP/HTTPS |
+| NLB | Layer 4 load balancer for TCP/UDP |
+| RDS | Managed relational database |
+| CloudWatch | Monitoring and alerting |
+| Route53 | DNS service |
+| EBS | Block storage for single EC2 instance |
+| EFS | Shared file storage across EC2 instances |
+| S3 | Object storage for static files |
+| IAM | Identity and access management |
+| Multi-AZ | High availability across availability zones |
