@@ -681,7 +681,6 @@ Non-Root Volume Permissions:
 ## 16. Docker Troubleshooting
 ---
 
-## 16. Docker Troubleshooting
 
 ### ImagePull Error
 
@@ -800,10 +799,16 @@ Docker follows a Client-Server Architecture. The Docker Client sends REST API re
 **Answer:**
 1. Client receives command → 2. Sends request to daemon → 3. Checks local image → 4. Pulls image if missing → 5. Creates writable layer → 6. Configures namespaces/cgroups → 7. Sets up networking/volumes → 8. Executes ENTRYPOINT/CMD → 9. Container starts.
 
-### Q7. What is the difference between CMD and ENTRYPOINT?
+
+
+### Q7. How do you reduce image size for a Java Spring Boot application?
 
 **Answer:**
-ENTRYPOINT defines the main executable that cannot be easily overridden. CMD provides default arguments that can be overridden by `docker run image bash`. Typically: `ENTRYPOINT java` + `CMD app.jar`.
+1. Use multi-stage builds (Maven builder → JRE runtime)
+2. Use minimal base image (eclipse-temurin:17-jre-alpine)
+3. Use `.dockerignore` to exclude target/, .git, etc.
+4. Combine RUN instructions
+5. Remove temporary files
 
 ### Q8. What is the difference between COPY and ADD?
 

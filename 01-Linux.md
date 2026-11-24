@@ -23,7 +23,10 @@
 - [14. Linux Troubleshooting Framework](#14-linux-troubleshooting-framework)
 - [15. Cron Jobs & Automation](#15-cron-jobs--automation)
 - [16. Linux Boot Process](#16-linux-boot-process)
-- [17. Interview Questions & Answers](#17-interview-questions--answers)
+- [17. Package Management](#17-package-management-rpmyum--dpkgapt)
+- [18. Working with Shell - II (Search, Redirection & VI)](#18-working-with-shell---ii-search-redirection--vi)
+- [19. Storage in Linux (Partitions, Filesystems, NFS & LVM)](#19-storage-in-linux-partitions-filesystems-nfs--lvm)
+- [20. Interview Questions & Answers](#20-interview-questions--answers)
 
 ---
 
@@ -477,9 +480,176 @@ Login Prompt
 4. **Initramfs** — Temporary root fs for hardware loading
 5. **systemd** — First process (PID 1), starts all services
 
+### Runlevels & Systemd Targets
+| Runlevel | Systemd Target | Description |
+| :---: | :--- | :--- |
+| **0** | `poweroff.target` | Shutdown / Halt |
+| **1** | `rescue.target` | Single-user recovery mode |
+| **3** | `multi-user.target` | Multi-user CLI mode (no GUI) |
+| **5** | `graphical.target` | Multi-user GUI mode |
+| **6** | `reboot.target` | System reboot |
+
+```bash
+systemctl get-default                       # Check default boot target
+sudo systemctl set-default multi-user.target # Set default boot to CLI
+```
+
 ---
 
-## 17. Interview Questions & Answers
+## 17. Package Management (RPM/YUM & DPKG/APT)
+
+### Red Hat Family (RHEL, CentOS, Fedora, Rocky)
+* **Low-level tool:** `rpm` (installs `.rpm` files locally; does **not** auto-resolve dependencies).
+* **High-level tool:** `yum` / `dnf` (resolves dependencies from repositories in `/etc/yum.repos.d/`).
+
+```bash
+# RPM Commands
+rpm -ivh package.rpm          # Install package
+rpm -e package_name           # Uninstall package
+rpm -qa                       # Query all installed packages
+rpm -qf /path/to/file         # Find which package owns a file
+
+# YUM / DNF Commands
+sudo yum install httpd        # Install package + dependencies
+sudo yum remove httpd         # Remove package
+sudo yum update               # Update all installed packages
+yum list installed            # List installed packages
+yum provides /usr/bin/wget    # Find package providing a file/command
+```
+
+### Debian Family (Ubuntu, Debian)
+* **Low-level tool:** `dpkg` (installs `.deb` files locally; no dependency resolution).
+* **High-level tool:** `apt` / `apt-get` (resolves dependencies from `/etc/apt/sources.list`).
+
+```bash
+# DPKG Commands
+sudo dpkg -i package.deb      # Install local .deb package
+sudo dpkg -r package_name     # Remove package
+dpkg -l                       # List installed packages
+
+# APT Commands (Modern user-friendly CLI; apt-get is preferred for scripts)
+sudo apt update               # Refresh package repository index
+sudo apt upgrade              # Upgrade all installed packages
+sudo apt install nginx        # Install package + dependencies
+sudo apt remove nginx         # Remove package (keep configs)
+sudo apt purge nginx          # Remove package + config files
+apt search <keyword>          # Search available packages
+```
+---
+
+## 18. Working with Shell - II (Search, Redirection & VI)
+
+### Archiving & Compression
+| Tool | Extension | Compress Command | Extract Command |
+| :--- | :--- | :--- | :--- |
+| **tar** (Archive only) | `.tar` | `tar -cvf archive.tar dir/` | `tar -xvf archive.tar` |
+| **tar + gzip** | `.tar.gz` / `.tgz` | `tar -czvf archive.tar.gz dir/` | `tar -xzvf archive.tar.gz` |
+| **tar + bzip2** | `.tar.bz2` | `tar -cjvf archive.tar.bz2 dir/` | `tar -xjvf archive.tar.bz2` |
+| **gzip / gunzip** | `.gz` | `gzip file.txt` | `gunzip file.txt.gz` |
+| **zip / unzip** | `.zip` | `zip -r archive.zip dir/` | `unzip archive.zip` |
+
+### Searching Files & Patterns
+```bash
+# find: Search filesystem hierarchy in real-time
+find /var/log -name "*.log"             # Find by exact name pattern
+find /home -iname "report*"             # Case-insensitive search
+find / -type f -size +100M              # Find regular files larger than 100MB
+find /etc -mtime -7                     # Modified within the last 7 days
+
+# locate: Fast search using pre-built database (run 'sudo updatedb' to refresh)
+locate passwd
+
+# grep: Search text patterns inside files
+grep "ERROR" /var/log/syslog            # Basic search
+grep -i "error" file.log                # Case-insensitive
+grep -r "Listen 80" /etc/apache2/       # Recursive directory search
+grep -v "^#" /etc/ssh/sshd_config       # Invert match (exclude commented lines)
+grep -E "error|warn|fatal" app.log      # Extended regex (OR condition)
+```
+
+### I/O Redirection & Pipes
+Every Linux process uses three standard streams:
+* **`0` (`stdin`):** Standard Input (keyboard)
+* **`1` (`stdout`):** Standard Output (terminal screen)
+* **`2` (`stderr`):** Standard Error (terminal screen)
+
+```bash
+cmd > file.txt            # Redirect stdout to file (overwrite)
+cmd >> file.txt           # Redirect stdout to file (append)
+cmd 2> error.log          # Redirect stderr to file
+cmd > all.log 2>&1        # Redirect both stdout and stderr to the same file
+cmd &> /dev/null          # Discard all output and errors silently
+cmd1 | cmd2               # Pipe stdout of cmd1 into stdin of cmd2
+cat file.txt | tee out.txt # Print to screen AND write to file simultaneously
+```
+
+### VI / VIM Editor Quick Guide
+* **Modes:**
+  * **Command Mode (`Esc`):** Default mode for navigation, deleting, copying, pasting.
+  * **Insert Mode (`i`, `a`, `o`):** Typing text (`i` = before cursor, `a` = after, `o` = new line below).
+  * **Last-Line / Ex Mode (`:`):** Saving, quitting, searching/replacing.
+* **Essential Keystrokes:**
+  * Navigation: `h` (left), `j` (down), `k` (up), `l` (right), `gg` (top of file), `G` (bottom of file).
+  * Edit: `x` (delete char), `dd` (delete/cut line), `yy` (yank/copy line), `p` (paste below), `u` (undo), `Ctrl+r` (redo).
+  * Search & Replace: `/pattern` (`n` for next match), `:%s/old/new/g` (replace all occurrences).
+  * Save/Exit: `:w` (save), `:q` (quit), `:wq` or `:x` (save & quit), `:q!` (force quit without saving).
+
+## 19. Storage in Linux (Partitions, Filesystems, NFS & LVM)
+
+* **Partition Tables:** **MBR** (max 2TB, up to 4 primary partitions) vs. **GPT** (supports >2TB, up to 128 partitions).
+* **Workflow:** `Partition Disk` $\rightarrow$ `Format with Filesystem` $\rightarrow$ `Mount Directory` $\rightarrow$ `Persist in /etc/fstab`.
+
+```bash
+lsblk -f                          # View disks, partitions, UUIDs, and filesystems
+sudo fdisk /dev/sdb               # Interactive MBR partitioning (gdisk/parted for GPT)
+sudo mkfs.ext4 /dev/sdb1          # Format partition with ext4 (or mkfs.xfs)
+sudo mkdir -p /mnt/data
+sudo mount /dev/sdb1 /mnt/data    # Mount partition temporarily
+df -hT                            # Check mounted filesystems & free space
+du -sh /var/log/*                 # Check disk usage of specific directories
+```
+
+* **Persistent Mounting (`/etc/fstab`):**
+  ```text
+  # <Device / UUID>                         <Mount Point>  <FS Type>  <Options>  <Dump> <Pass>
+  UUID=a1b2c3d4-5678-90ab-cdef-1234567890ab  /mnt/data      ext4       defaults   0      2
+  ```
+  *(Always test `/etc/fstab` changes with `sudo mount -a` before rebooting!)*
+
+### Storage Architectures & NFS
+* **DAS (Direct Attached Storage):** Local disks directly attached to a single host.
+* **NAS (Network Attached Storage):** File-level storage shared over IP networks (NFS, SMB).
+* **SAN (Storage Area Network):** High-speed block-level storage over dedicated fiber/iSCSI networks.
+* **Mounting an NFS Share:**
+  ```bash
+  sudo mount -t nfs 192.168.1.100:/srv/nfs/share /mnt/nfs_share
+  ```
+
+### LVM (Logical Volume Manager)
+LVM abstracts physical drives into flexible, resizable logical storage pools:
+$$\text{Physical Volumes (PV)} \longrightarrow \text{Volume Group (VG)} \longrightarrow \text{Logical Volumes (LV)} \longrightarrow \text{Filesystem}$$
+
+```bash
+# 1. Initialize physical disks as Physical Volumes
+sudo pvcreate /dev/sdb /dev/sdc
+pvs                                     # View Physical Volumes
+
+# 2. Combine PVs into a Volume Group
+sudo vgcreate vg_data /dev/sdb /dev/sdc
+vgs                                     # View Volume Groups
+
+# 3. Carve out a Logical Volume from the VG
+sudo lvcreate -L 10G -n lv_app vg_data
+lvs                                     # View Logical Volumes
+
+# 4. Format and mount the Logical Volume
+sudo mkfs.ext4 /dev/vg_data/lv_app
+sudo mount /dev/vg_data/lv_app /mnt/app
+
+# 5. Extend a Logical Volume + Resize Filesystem on the fly
+sudo lvextend -L +5G -r /dev/vg_data/lv_app
+```
+---
 
 ### Q1. What is Load Average?
 
@@ -628,6 +798,53 @@ find /var/log -type f -mtime +30 -exec -i {} \;
 - `/tmp` — Cleared on system reboot
 - `/var/tmp` — Persisted across reboots
 
+### Q16. What is the difference between MBR and GPT partition tables?
+
+**Answer:**
+- **MBR:** Maximum 2TB disk size, up to 4 primary partitions. Older standard, bios-based.
+- **GPT:** Supports disks >2TB, up to 128 partitions. Modern standard, usually requires UEFI, stores CRC headers for corruption protection.
+
+### Q17. How do you extend a filesystem without unmounting?
+
+**Answer:**
+```bash
+# For ext4 on LVM
+sudo lvextend -L +5G /dev/vg_data/lv_app
+sudo resize2fs /dev/vg_data/lv_app
+
+# For xfs
+sudo lvextend -L +5G /dev/vg_data/lv_app
+sudo xfs_growfs /mnt/app
+```
+
+### Q18. What are the differences between soft link and hard link in terms of inode and filesystem?
+
+**Answer:**
+- **Soft Link (Symlink):** Has a different inode than the original; points to the file path (not inode); works across filesystems; breaks if the original is deleted.
+- **Hard Link:** Shares the same inode as the original; points to the data on disk; cannot work across filesystems; survives if the original filename is deleted (but not if the inode/data is deleted).
+
+### Q19. How do you debug a Bash script?
+
+**Answer:**
+```bash
+# Debug mode
+bash -x script.sh
+
+# Add to script
+set -x
+# ... commands ...
+set +x
+
+# Check syntax without executing
+bash -n script.sh
+```
+
+### Q20. What is the difference between `copy` and `clone` in Linux virtualization?
+
+**Answer:**
+- **Copy:** Duplicates data at the file level; requires installing OS and configuring on the new system.
+- **Clone:** Creates an exact copy of a disk/partition at the block level; can be used to create identical VMs quickly (using tools like `dd`, `clonezilla`, or `lvcreate --snapshot`).
+
 ---
 
 ## Quick Revision
@@ -639,10 +856,13 @@ find /var/log -type f -mtime +30 -exec -i {} \;
 | Services | `systemctl start/stop/status/restart` |
 | Disk | `df -h`, `du -sh` |
 | Network | `ss -tulpn`, `ip addr`, `ping` |
-| Memory | `free -h`, `ps aux --srt=-%mem` |
+| Memory | `free -h`, `ps aux --sort=-%mem` |
 | CPU | `top`, `uptime`, `ps aux --sort=-%cpu` |
 | Logs | `tail -f`, `grep ERROR`, `journalctl` |
 | Text | `grep`, `awk`, `sed` |
 | SSH | `ssh-keygen`, `ssh-copy-id` |
 | Links | `ln -s` (soft), `ln` (hard) |
 | Cron | `crontab -e`, `crontab -l` |
+| Package Mgmt | `yum install`, `apt-get install` |
+| Shell II | `find`, `grep`, `vi` commands |
+| Storage | `lsblk`, `pvcreate`, `vgcreate`, `lvcreate`, `fstab` |
